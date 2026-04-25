@@ -1,0 +1,2 @@
+/private/tmp/.espressif/tools/xtensa-esp-elf/esp-15.2.0_20251204/xtensa-esp-elf/bin/xtensa-esp32-elf-ar qc libmain.a CMakeFiles/__idf_main.dir/app_main.cpp.obj CMakeFiles/__idf_main.dir/__/src/ad5761.cpp.obj CMakeFiles/__idf_main.dir/__/src/ad7172.cpp.obj CMakeFiles/__idf_main.dir/__/src/demo_app.cpp.obj CMakeFiles/__idf_main.dir/__/src/shared_spi_bus.cpp.obj
+/private/tmp/.espressif/tools/xtensa-esp-elf/esp-15.2.0_20251204/xtensa-esp-elf/bin/xtensa-esp32-elf-ranlib libmain.a
