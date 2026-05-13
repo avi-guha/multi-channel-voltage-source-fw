@@ -47,7 +47,7 @@ class SharedSpiBus {
     spi_device_handle_t handle = nullptr;
   };
 
-  static constexpr size_t kMaxDevices = 4;
+  static constexpr size_t kMaxDevices = 5;
 
   spi_host_device_t host_ = SPI2_HOST;
   DeviceHandleSlot device_handles_[kMaxDevices];

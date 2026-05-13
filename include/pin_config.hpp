@@ -7,8 +7,11 @@ namespace pins {
 constexpr int kSpiSclk = 18;
 constexpr int kSpiMosi = 23;
 constexpr int kSpiMiso = 19;
-constexpr int kDacCs = 5;
-constexpr int kAdcCs = 4;
+constexpr int kDacCs1 = 5;
+constexpr int kDacCs2 = 17;
+constexpr int kDacCs3 = 16;
+constexpr int kDacCs4 = 4;
+constexpr int kAdcCs = 21;
 
 }  // namespace pins
 

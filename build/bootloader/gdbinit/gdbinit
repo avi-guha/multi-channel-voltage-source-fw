@@ -1,0 +1,2 @@
+source /Users/avi/Documents/work/quantum-silicon-photonics/multi-channel-voltage-source-fw/build/bootloader/gdbinit/symbols
+source /Users/avi/Documents/work/quantum-silicon-photonics/multi-channel-voltage-source-fw/build/bootloader/gdbinit/connect

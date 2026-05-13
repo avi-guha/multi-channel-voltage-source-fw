@@ -1,40 +1,192 @@
-# Firmware Generation Request: ESP32 with AD5761 DAC and AD7172-2 ADC
+# ESP32 + 4x AD5761 + AD7172-2 Bring-Up Guide
 
-Please write firmware in C++ for the ESP32 (compatible with the Arduino core / ESP-IDF) to control an AD5761RARUZ DAC and an AD7172-2BRUZ ADC over a shared SPI bus.
+This repository now contains a small firmware scaffold that runs on an ESP32 and drives:
 
-## Hardware Pinout
-* **SPI SCLK:** GPIO 18
-* **SPI MOSI:** GPIO 23
-* **SPI MISO:** GPIO 19
-* **DAC CS (SYNC):** GPIO 5
-* **ADC CS:** GPIO 4
+* `AD5761RARUZ` devices on a shared SPI bus as four output DAC channels
+* `AD7172-2BRUZ` on the same shared SPI bus as the input ADC
 
-## SPI Bus Configuration
-The devices share an SPI bus but have different timing requirements. Please implement SPI transactions using `SPI.beginTransaction(SPISettings(...))` to dynamically switch parameters between peripheral calls.
-* **AD5761 DAC SPI:** 24-bit shift register, Data clocked in on falling edge (SPI Mode 2 or as per AD5761 datasheet), max frequency 50 MHz (use 10 MHz for safety).
-* **AD7172 ADC SPI:** Data clocked on falling edge, default high idle (SPI Mode 3), max frequency 20 MHz (use 8 MHz for safety).
+The code is split so the device logic is shared and there are two entry paths:
 
-## DAC Requirements (AD5761RARUZ)
-1.  **Hardware State:** `~LDAC` is hardwired to GND. The output updates automatically on the rising edge of `CS`. `~RESET` and `~CLEAR` are not physically connected.
-2.  **Initialization:** * Perform a software reset by writing the Software Reset command (0x0F0000).
-    * Write to the Control Register to configure the output range appropriately for bipolar operation (-5V to +5V) and enable the output.
-3.  **Operation:** * Write a function `void setDACVoltage(float voltage)` that maps a voltage (from -5V to +5V) to the 16-bit register and transmits the 24-bit command (Address + Data) over SPI.
+* ESP-IDF: [main/app_main.cpp](/Users/avi/Documents/work/quantum-silicon-photonics/multi-channel-voltage-source-fw/main/app_main.cpp)
+* Arduino: [arduino/esp32_ad5761_ad7172_demo/esp32_ad5761_ad7172_demo.ino](/Users/avi/Documents/work/quantum-silicon-photonics/multi-channel-voltage-source-fw/arduino/esp32_ad5761_ad7172_demo/esp32_ad5761_ad7172_demo.ino)
 
-## ADC Requirements (AD7172-2BRUZ)
-1.  **Hardware State:** Bipolar supply (+2.5V to -2.5V). The `DOUT` pin doubles as the `~RDY` pin.
-2.  **Initialization:**
-    * Reset the ADC by writing 64 consecutive `1`s over the SPI bus.
-    * Configure the ADC Setup Register for bipolar operation.
-    * Configure the Channel Registers to enable inputs AIN0 through AIN3 (referenced to AIN4, which is grounded).
-3.  **Operation:**
-    * Write a function `float readADCChannel(uint8_t channel)` that polls the `~RDY` state (via the MISO line while CS is low), reads the 24-bit data register when ready, and converts the two's complement or offset binary 24-bit value to a real-world voltage.
+The core drivers live in:
 
-## Code Structure
-* Use modular, well-commented code.
-* Abstract the SPI read/write functions into separate helper methods for the DAC and ADC to keep the code clean.
-* Provide a basic `setup()` loop that initializes both devices and a `loop()` that sequentially steps the DAC through a few voltages and reads the ADC channels back to the Serial monitor.
+* [include/ad5761.hpp](/Users/avi/Documents/work/quantum-silicon-photonics/multi-channel-voltage-source-fw/include/ad5761.hpp)
+* [include/ad7172.hpp](/Users/avi/Documents/work/quantum-silicon-photonics/multi-channel-voltage-source-fw/include/ad7172.hpp)
+* [src/ad5761.cpp](/Users/avi/Documents/work/quantum-silicon-photonics/multi-channel-voltage-source-fw/src/ad5761.cpp)
+* [src/ad7172.cpp](/Users/avi/Documents/work/quantum-silicon-photonics/multi-channel-voltage-source-fw/src/ad7172.cpp)
+* [src/shared_spi_bus.cpp](/Users/avi/Documents/work/quantum-silicon-photonics/multi-channel-voltage-source-fw/src/shared_spi_bus.cpp)
 
-## User Guide
-* when done with the code, generate a Guide.MD that will be easy for the user of this software to follow and debug.
-* refer to the specific parts and particular debugging steps.
-* your code will be reviewed by claude when finished. 
+## 1. Hardware Assumptions
+
+The firmware assumes the exact pinout from `ReadMe.md`:
+
+* `SCLK` -> GPIO 18
+* `MOSI` -> GPIO 23
+* `MISO` -> GPIO 19
+* `DAC1 CS1 / SYNC` -> GPIO 5
+* `DAC2 CS2 / SYNC` -> GPIO 17
+* `DAC3 CS3 / SYNC` -> GPIO 16
+* `DAC4 CS4 / SYNC` -> GPIO 4
+* `ADC CS5` -> GPIO 21
+
+Important hardware assumptions:
+
+* `AD5761` is the non-`R` part. It needs a valid external reference on `VREFIN`.
+* `AD5761` must have analog rails with enough headroom for `-5 V to +5 V` output.
+* `AD7172-2` is configured for bipolar mode with the internal `2.5 V` reference enabled.
+* `AD7172-2` channels are configured as `AIN0..AIN3` measured against `AIN4`.
+* `AIN4` must be tied to your analog ground if you want single-ended readings.
+
+## 2. SPI Settings Used
+
+The shared bus switches parameters per peripheral:
+
+* DAC: `10 MHz`, `SPI mode 2`
+* ADC: `8 MHz`, `SPI mode 3`
+
+Arduino path:
+
+* The switching happens through `SPI.beginTransaction(SPISettings(...))` in [src/shared_spi_bus.cpp](/Users/avi/Documents/work/quantum-silicon-photonics/multi-channel-voltage-source-fw/src/shared_spi_bus.cpp)
+
+ESP-IDF path:
+
+* The switching happens through separate `spi_device_handle_t` configurations on the same bus
+* Chip-select is driven manually so the ADC `DOUT/RDY` line can be polled while `CS` stays low
+
+## 3. DAC Initialization Details
+
+Each DAC uses the same init sequence in [src/ad5761.cpp](/Users/avi/Documents/work/quantum-silicon-photonics/multi-channel-voltage-source-fw/src/ad5761.cpp):
+
+1. Software full reset: `0x0F0000`
+2. Control register write: `0x04020A`
+
+`0x04020A` means:
+
+* `CV = 01` -> clear code is midscale
+* `PV = 01` -> power-up voltage is midscale
+* `RA = 010` -> output range is `-5 V to +5 V`
+* `B2C = 0` -> straight binary input coding for bipolar mode
+
+Voltage writes use command `0x03xxxx`, which is write-and-update DAC.
+
+Application behavior used by `setDACVoltage(float voltage)`:
+
+* The firmware clamps requested values to `-2.5 V .. +2.5 V`
+* The AD5761 itself stays configured for `-5 V .. +5 V` because this part does not offer a native `-2.5 V .. +2.5 V` range
+* `-2.5 V` maps near code `0x4000`
+* `0.0 V` maps near code `0x8000`
+* `+2.5 V` maps near code `0xC000`
+
+## 4. ADC Initialization Details
+
+The ADC init sequence in [src/ad7172.cpp](/Users/avi/Documents/work/quantum-silicon-photonics/multi-channel-voltage-source-fw/src/ad7172.cpp) is:
+
+1. Interface reset with 64 ones: eight bytes of `0xFF`
+2. Read `ID` register at `0x07`
+3. Write `IFMODE = 0x0040`
+4. Write `ADCMODE = 0x8000`
+5. Write `SETUPCON0 = 0x1020`
+6. Write `FILTCON0 = 0x050E`
+7. Enable channels:
+   `CH0 = 0x8004`
+   `CH1 = 0x8024`
+   `CH2 = 0x8044`
+   `CH3 = 0x8064`
+
+What those settings mean:
+
+* `IFMODE = 0x0040`
+  `DATA_STAT = 1`, so every data read also returns the status byte
+* `ADCMODE = 0x8000`
+  internal `2.5 V` reference enabled, continuous conversion, internal oscillator
+* `SETUPCON0 = 0x1020`
+  bipolar output coding, internal reference selected
+* `FILTCON0 = 0x050E`
+  sinc5 + sinc1 filter with `ODR = 0x0E`, roughly `100.2 SPS`
+
+## 5. How Channel Reads Work
+
+`readADCChannel(uint8_t channel)` does this:
+
+1. Pulls ADC `CS` low
+2. Polls the shared `MISO` pin until `DOUT/RDY` goes low
+3. Reads the ADC data register plus appended status
+4. Checks the status byte to identify which channel produced that conversion
+5. Repeats until the requested channel is seen
+6. Converts the 24-bit offset-binary code to volts
+
+Voltage conversion assumes the internal `2.5 V` reference:
+
+* `0x800000` -> about `0 V`
+* `0x000000` -> about `-2.5 V`
+* `0xFFFFFF` -> about `+2.5 V`
+
+If your design uses an external ADC reference instead, update:
+
+* `app_config::kAdcReferenceVoltage` in [include/pin_config.hpp](/Users/avi/Documents/work/quantum-silicon-photonics/multi-channel-voltage-source-fw/include/pin_config.hpp)
+* `kSetupCon0BipolarInternalRef` in [include/ad7172.hpp](/Users/avi/Documents/work/quantum-silicon-photonics/multi-channel-voltage-source-fw/include/ad7172.hpp)
+
+## 6. Expected Runtime Behavior
+
+The demo loop in [src/demo_app.cpp](/Users/avi/Documents/work/quantum-silicon-photonics/multi-channel-voltage-source-fw/src/demo_app.cpp):
+
+* steps DAC1-DAC4 together through `-2.5`, `-1.25`, `0.0`, `1.25`, `2.5` volts
+* waits `50 ms`
+* reads back all four ADC channels
+* prints the measured voltages once per second
+
+## 7. Debug Checklist
+
+If one DAC output is wrong:
+
+* Verify the DAC external reference is present and stable
+* Verify DAC analog rails can actually support the configured hardware range of `-5 V to +5 V`
+* Probe SPI and confirm the first two 24-bit writes are:
+  `0x0F0000`
+  `0x04020A`
+* If you command `-2.5 V`, expect a DAC code near `0x4000`, not `0x0000`
+* Check that the affected `CS` line returns high after each 24-bit transfer
+
+If the ADC always returns `0xFFFFFF` or `0x000000`:
+
+* Check the ADC reference wiring first
+* Check that `AINx` voltages stay inside the allowed analog supply range
+* Check the appended status byte for bit `6` (`ADC_ERROR`)
+* Confirm `CS` stays low while polling `DOUT/RDY`
+
+If the ADC never appears ready:
+
+* Remember `DOUT/RDY` is tri-stated when `CS` is high
+* Put a scope or logic analyzer on `CS5` and `MISO`
+* Verify `CS5` is low during the ready poll
+* Verify the reset burst is eight bytes of `0xFF`
+
+If bus contention appears:
+
+* Confirm only one of `CS1` through `CS5` is ever low at a time
+* Confirm the DAC and ADC are using different SPI modes as configured
+* Confirm the `MISO` line is not being driven by the DACs when their `CS` lines are high
+
+## 8. Build Notes
+
+ESP-IDF project files:
+
+* [CMakeLists.txt](/Users/avi/Documents/work/quantum-silicon-photonics/multi-channel-voltage-source-fw/CMakeLists.txt)
+* [main/CMakeLists.txt](/Users/avi/Documents/work/quantum-silicon-photonics/multi-channel-voltage-source-fw/main/CMakeLists.txt)
+
+Typical ESP-IDF flow once `idf.py` is installed and exported:
+
+```bash
+idf.py set-target esp32
+idf.py build
+idf.py flash monitor
+```
+
+Typical Arduino flow:
+
+* open `arduino/esp32_ad5761_ad7172_demo/esp32_ad5761_ad7172_demo.ino`
+* keep the companion wrapper files in the same sketch folder so the Arduino builder compiles the shared repository sources
+* select an ESP32 board
+* build and flash

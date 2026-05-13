@@ -18,19 +18,20 @@ Ad5761::Ad5761(SharedSpiBus& bus, const SpiDeviceConfig& spi_config)
 
 bool Ad5761::begin() {
   if (!writeCommand(kCmdSoftwareFullReset, 0x0000)) {
-    platform::logError(kLogTag, "software reset failed");
+    platform::logError(kLogTag, "%s software reset failed", spi_config_.name);
     return false;
   }
   platform::delayUs(100);
 
   if (!writeCommand(kCmdWriteControl, kControlRegisterValue)) {
-    platform::logError(kLogTag, "control register write failed");
+    platform::logError(kLogTag, "%s control register write failed", spi_config_.name);
     return false;
   }
 
   setDACVoltage(0.0f);
   platform::logInfo(kLogTag,
-                    "initialized with +/-5 V range, command clamp %.1f V to %.1f V",
+                    "%s initialized with +/-5 V range, command clamp %.1f V to %.1f V",
+                    spi_config_.name,
                     app_config::kDacTargetMinVoltage,
                     app_config::kDacTargetMaxVoltage);
   return true;
@@ -39,7 +40,7 @@ bool Ad5761::begin() {
 void Ad5761::setDACVoltage(float voltage) {
   const uint16_t dac_code = encodeVoltage(voltage);
   if (!writeCommand(kCmdWriteAndUpdateDac, dac_code)) {
-    platform::logError(kLogTag, "failed to update DAC to %.4f V", voltage);
+    platform::logError(kLogTag, "failed to update %s to %.4f V", spi_config_.name, voltage);
   }
 }
 
