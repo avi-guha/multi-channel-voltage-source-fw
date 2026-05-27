@@ -24,37 +24,37 @@ struct SpiDeviceConfig {
 };
 
 class SharedSpiBus {
- public:
-  SharedSpiBus() = default;
+  public:
+    SharedSpiBus() = default;
 
-  bool begin(int sclk_pin,
-             int miso_pin,
-             int mosi_pin,
-             const SpiDeviceConfig* devices,
-             size_t device_count);
+    bool begin(int sclk_pin,
+        int miso_pin,
+        int mosi_pin,
+        const SpiDeviceConfig* devices,
+        size_t device_count);
 
-  bool beginSession(const SpiDeviceConfig& device);
-  bool transfer(const uint8_t* tx_data, uint8_t* rx_data, size_t length_bytes);
-  int readMisoLevel() const;
-  void endSession();
+    bool beginSession(const SpiDeviceConfig& device);
+    bool transfer(const uint8_t* tx_data, uint8_t* rx_data, size_t length_bytes);
+    int readMisoLevel() const;
+    void endSession();
 
- private:
+  private:
 #if defined(ARDUINO)
-  SPIClass* spi_ = &SPI;
+    SPIClass* spi_ = &SPI;
 #else
-  struct DeviceHandleSlot {
-    int cs_pin = -1;
-    spi_device_handle_t handle = nullptr;
-  };
+    struct DeviceHandleSlot {
+      int cs_pin = -1;
+      spi_device_handle_t handle = nullptr;
+    };
 
-  static constexpr size_t kMaxDevices = 5;
+    static constexpr size_t kMaxDevices = 5;
 
-  spi_host_device_t host_ = SPI2_HOST;
-  DeviceHandleSlot device_handles_[kMaxDevices];
-  size_t device_handle_count_ = 0;
-  spi_device_handle_t current_handle_ = nullptr;
+    spi_host_device_t host_ = SPI2_HOST;
+    DeviceHandleSlot device_handles_[kMaxDevices];
+    size_t device_handle_count_ = 0;
+    spi_device_handle_t current_handle_ = nullptr;
 #endif
 
-  const SpiDeviceConfig* current_device_ = nullptr;
-  int miso_pin_ = -1;
+    const SpiDeviceConfig* current_device_ = nullptr;
+    int miso_pin_ = -1;
 };
