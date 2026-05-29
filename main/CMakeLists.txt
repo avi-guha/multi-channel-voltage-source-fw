@@ -1,6 +1,7 @@
 idf_component_register(
     SRCS
         "app_main.cpp"
+        "../src/fsm.cpp"
         "../src/ad5761.cpp"
         "../src/ad7172.cpp"
         "../src/demo_app.cpp"
