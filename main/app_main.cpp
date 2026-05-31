@@ -22,12 +22,12 @@ extern "C" void app_main(void) {
   void sweep_task (void* arg);
   
 
-  xTaskCreatePinnedToCore(log_task, "log", 3000, NULL, 2, NULL, 0);
-  xTaskCreatePinnedToCore(usr_input_task, "input", 3000, NULL, 1, NULL, 0);
-  xTaskCreatePinnedToCore(fsm_task, "fsm", 3000, NULL, 2, &fsm_task_handle, 1);
-  xTaskCreatePinnedToCore(adc_task, "adc", 3000, NULL, 5, &adc_task_handle, 1);
-  xTaskCreatePinnedToCore(dac_task, "dac", 3000, NULL, 4, &dac_task_handle, 1);
-  xTaskCreatePinnedToCore(sweep_task, "sweep", 3000, NULL, 5, &sweep_task_handle, 1);
+  xTaskCreatePinnedToCore(log_task, "Log", 3000, NULL, 2, NULL, 0);
+  xTaskCreatePinnedToCore(usr_input_task, "Input", 3000, NULL, 2, NULL, 0);
+  xTaskCreatePinnedToCore(fsm_task, "FSM", 3000, NULL, 3, &fsm_task_handle, 1);
+  xTaskCreatePinnedToCore(adc_task, "Adc", 3000, NULL, 5, &adc_task_handle, 1);
+  xTaskCreatePinnedToCore(dac_task, "Dac", 3000, NULL, 4, &dac_task_handle, 1);
+  xTaskCreatePinnedToCore(sweep_task, "Sweep", 3000, NULL, 5, &sweep_task_handle, 1);
 
   if (!fsm.begin()) {
     platform::logError("app_main", "application init failed");
