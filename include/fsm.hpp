@@ -1,12 +1,14 @@
 #pragma once
+#include <task_comms.hpp>
+#include <states/state_idle.hpp>
+#include <states/state_error.hpp>
+#include <states/state_sweep.hpp>
+#include <states/state_steady.hpp>
 
-#include "ad5761.hpp"
-#include "ad7172.hpp"
-#include "pin_config.hpp"
-#include "shared_spi_bus.hpp"
 
-enum class State { IDLE, SWEEP, STEADY, ERROR };
-enum class Event {
+enum class State : uint8_t { IDLE, SWEEP, STEADY, ERROR };
+
+enum class Event : uint8_t {
   NO_EVENT, STOP, START_SWEEP, START_STEADY, 
   DONE_SWEEP, DONE_STEADY, ERROR, CONTINUE
 };
@@ -15,6 +17,7 @@ class FSM {
   public:
    FSM(); 
    bool begin();
+   void fsmTask();
 
 
   private:
@@ -22,9 +25,8 @@ class FSM {
    State next_state;
    Event event;
   
-   void fsmTask();
    void process_event();
-   void state_enter();
-   void state_exit();
    void state_run();
+   void state_exit();
+   void state_enter();
 };

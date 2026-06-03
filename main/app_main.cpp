@@ -1,11 +1,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "fsm.hpp"
+#include <fsm.hpp>
 #include "platform_abstraction.hpp"
 
 extern "C" void app_main(void) {
-  
-  static FSM fsm;
+
+  QueueHandle_t event_queue;
+
+  event_queue = xQueueCreate(1, sizeof(Event));
 
   TaskHandle_t fsm_task_handle = NULL;
   TaskHandle_t adc_task_handle = NULL;
@@ -26,6 +28,7 @@ extern "C" void app_main(void) {
   xTaskCreatePinnedToCore(dac_task, "Dac", 3000, NULL, 4, &dac_task_handle, 1);
   xTaskCreatePinnedToCore(sweep_task, "Sweep", 3000, NULL, 5, &sweep_task_handle, 1);
 
+  static FSM fsm;
 
   if (!fsm.begin()) {
     platform::logError("app_main", "application init failed");
