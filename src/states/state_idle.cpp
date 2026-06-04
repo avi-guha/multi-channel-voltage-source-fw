@@ -2,25 +2,40 @@
 #include "task_comms.hpp"
 #include "fsm_types.hpp"
 
+Event event;
+struct UserCmd cmd;
+
 
 void idle_enter(){
-
+  event = Event::NO_EVENT;
 }
 
-/* ToDo 
- * Is xQueueCreateStatic a better choice?
- * Do I just have infinite loop until queue arrives? Is this non-blocking.
- * Where do I make and send user_cmd_queue? Idle state is receiving it
- * Do I make the struct in every class that needs to receive?
- *
- */
+
 void idle_run(){
-  while(user_cmd_queue == 0){
-    continue;
-  } 
-  xQueueReceive(user_cmd_queue, &UserCmd, );
-  xQueueSend(event_queue, &event, pdMS_TO_TICKS(100)); 
+
+  if (user_cmd_queue != 0){
+
+    xQueuePeek(user_cmd_queue, &cmd, pdMS_TO_TICKS(100));
+
+    switch (cmd.mode){
+
+      case Mode::SWEEP:
+        event = Event::START_SWEEP;
+        break;
+
+      case Mode::STEADY:
+        event = Event::START_STEADY;
+        break;
+
+      default:
+        event = Event::NO_EVENT;
+        break;
+    }
+
+    xQueueSend(event_queue, &event, pdMS_TO_TICKS(100)); 
+  }
 }
+
 
 void idle_exit(){
   

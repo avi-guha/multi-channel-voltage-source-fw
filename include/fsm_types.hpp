@@ -1,6 +1,8 @@
 #pragma once
 
-
+/*
+ * Enum class for managing finite state machine's states and events
+ */
 enum class State  { IDLE, SWEEP, STEADY, ERROR };
 
 enum class Event {
