@@ -7,7 +7,7 @@
 class Ad7172_2 {
  public:
   Ad7172_2(SharedSpiBus& bus, const SpiDeviceConfig& spi_config);
-
+  static void ADC_task(void* arg);
   bool begin();
   float readADCChannel(uint8_t channel);
 

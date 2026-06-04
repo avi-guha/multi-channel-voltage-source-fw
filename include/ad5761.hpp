@@ -5,7 +5,7 @@
 class Ad5761 {
  public:
   Ad5761(SharedSpiBus& bus, const SpiDeviceConfig& spi_config);
-
+  static void DAC_task(void* arg);
   bool begin();
   void setDACVoltage(float voltage);
 

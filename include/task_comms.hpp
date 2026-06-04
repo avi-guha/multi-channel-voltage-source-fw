@@ -1,11 +1,9 @@
 #pragma once
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 enum class Mode : uint8_t { SWEEP, STEADY };
 enum class TimeUnit : uint8_t { Sec, Min, Hour };
-
-extern QueueHandle_t event_queue;
 
 struct SteadyParams{
   float voltage;
@@ -28,3 +26,6 @@ struct UserCmd{
 };
 
 
+extern QueueHandle_t user_cmd_queue;
+extern QueueHandle_t event_queue;
+void user_cmd_task(void* arg);

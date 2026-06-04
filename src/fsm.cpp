@@ -1,13 +1,27 @@
-#include <fsm.hpp>
+#include <esp_log.h>
+#include "fsm.hpp"
+
+static const char* TAG = "FSM";
+
+static FSM fsm;
 
 
 FSM::FSM(): current_state(State::IDLE), next_state(State::IDLE), event(Event::NO_EVENT){}
+
+void FSM::fsm_task(void* arg){
+  if(!fsm.begin()){
+    ESP_LOGE(TAG,"Failed to start Idle state.");
+  }
+  else{
+    fsm.run();
+  }
+}
 
 bool FSM::begin() {
   return true; 
 }
 
-void FSM::fsmTask() {
+void FSM::run() {
   
   while(true){
     if (event_queue != 0){
@@ -123,7 +137,7 @@ void FSM::process_event(){
         next_state = State::IDLE;
       }
       break;
-
+    
     default:
       next_state = current_state;
   };
