@@ -1,4 +1,4 @@
 #pragma once
-#include "channel.hpp"
 
-static Channel channel[4];
+
+void coordinator_task(void* arg);

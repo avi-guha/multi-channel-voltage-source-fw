@@ -1,10 +1,9 @@
 #pragma once
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include "ad5761.hpp"
-#include "ad7172.hpp"
 
-enum class Mode : uint8_t { SWEEP, STEADY };
+
+enum class Mode : uint8_t { SWEEP, STEADY, OFF};
 enum class TimeUnit : uint8_t { Sec, Min, Hour };
 
 struct SteadyParams{
@@ -12,18 +11,19 @@ struct SteadyParams{
 };
 
 struct SweepParams{
-  float sweep_range;
-  float step;
+  float range_in_V;
+  float step_size;
 };
 
 struct UserCmd{
+  uint8_t channel_id;
   Mode mode;
   float duration;
-  TimeUnit unit;
+  TimeUnit time_unit;
   union {
-    struct SteadyParams SteadyMode;
-    struct SweepParams SweepMode;
-  } params;
+    struct SteadyParams Steady;
+    struct SweepParams Sweep;
+  } param;
   bool valid;
 };
 
