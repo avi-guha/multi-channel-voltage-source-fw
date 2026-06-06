@@ -2,19 +2,21 @@
 #include "task_comms.hpp"
 #include "ad5761.hpp"
 
+
+enum class SweepPhase { FIRST, SECOND, THIRD};
+
 class Channel{
 
   public:
     Channel();
 
+    Mode mode;
+    bool done;
+
     void update(UserCmd& cmd); 
     void sweep_run();
     void steady_run();
     void stop();
-
-    Mode mode;
-    bool done;
-
 
   private:
 
@@ -26,9 +28,10 @@ class Channel{
     };
 
     struct SweepParams{
+      SweepPhase phase_;
       float range_in_mV_;
       float step_size_;
-      uint32_t step_count_;
+      int step_count_;
       uint32_t single_sweep_steps_;
       uint32_t total_steps_;
     };
@@ -37,5 +40,6 @@ class Channel{
     SweepParams sweep_;
 
     Ad5761 dac();
+    void time_to_xtickcount(UserCmd& cmd); 
     void sweep_steps_config(UserCmd& cmd);
 };
