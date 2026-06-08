@@ -1,10 +1,6 @@
 #include <esp_log.h>
-#include "fsm.hpp"
+#include "deprecated/fsm.hpp"
 #include "task_comms.hpp"
-#include "states/state_idle.hpp"
-#include "states/state_error.hpp"
-#include "states/state_sweep.hpp"
-#include "states/state_steady.hpp"
 
 static const char* TAG = "FSM";
 
@@ -49,61 +45,61 @@ void FSM::run() {
 
 void FSM::state_exit(){
 
-  switch (current_state) {
-
-    case State::IDLE:
-      idle_exit();
-      break;
-    case State::SWEEP:
-      sweep_exit();
-      break;
-    case State::STEADY:
-      steady_exit();
-      break;
-    case State::ERROR:
-      error_exit();
-      break;
-  }
+  // switch (current_state) {
+  //
+  //   case State::IDLE:
+  //     idle_exit();
+  //     break;
+  //   case State::SWEEP:
+  //     sweep_exit();
+  //     break;
+  //   case State::STEADY:
+  //     steady_exit();
+  //     break;
+  //   case State::ERROR:
+  //     error_exit();
+  //     break;
+  // }
 }
 
 
 void FSM::state_enter(){
 
-  switch (current_state) {
-
-    case State::IDLE:
-      idle_enter();
-      break;
-    case State::SWEEP:
-      sweep_enter();
-      break;
-    case State::STEADY:
-      steady_enter();
-      break;
-    case State::ERROR:
-      error_enter();
-      break;
-  }
+  // switch (current_state) {
+  //
+  //   case State::IDLE:
+  //     idle_enter();
+  //     break;
+  //   case State::SWEEP:
+  //     sweep_enter();
+  //     break;
+  //   case State::STEADY:
+  //     steady_enter();
+  //     break;
+  //   case State::ERROR:
+  //     error_enter();
+  //     break;
+  // }
 }
 
 
 void FSM::state_run() {
   
-  switch (current_state){
-
-    case State::IDLE:
-      idle_run();
-      break;
-    case State::SWEEP:
-      sweep_run();
-      break;
-    case State::STEADY:
-      steady_run();
-      break;
-    case State::ERROR:
-      error_run();
-      break;
-  } 
+  // switch (current_state){
+  //
+  //   case State::IDLE:
+  //     idle_run();
+  //     break;
+  //   case State::SWEEP:
+  //     sweep_run();
+  //     break;
+  //   case State::STEADY:
+  //     steady_run();
+  //     break;
+  //   case State::ERROR:
+  //     error_run();
+  //     break;
+  // } 
 }
 
 

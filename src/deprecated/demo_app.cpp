@@ -1,8 +1,8 @@
-#include "../include/demo_app.hpp"
+#include "deprecated/demo_app.hpp"
 
 #include <cmath>
 
-#include "../include/platform_abstraction.hpp"
+#include "deprecated/platform_abstraction.hpp"
 
 namespace {
 
