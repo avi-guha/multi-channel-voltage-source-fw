@@ -3,22 +3,30 @@
 #include "task_comms.hpp"
 
 static const char* TAG = "Channel";
-struct UserCmd cmd;
+
+UserCmd cmd;
+DataLog data;
+
 
 Channel::Channel()
-  : mode(Mode::OFF),
-    done(false) 
-    // Do spi bus initialization
-{
+  : channel_id(0),
+    mode(Mode::OFF),
+    done(false),
+    adc_(nullptr),
+    dac_(nullptr) {}
 
-  steady_.initialized_ = false;
+bool Channel::init(uint8_t id, Ad7172_2* adc, Ad5761* dac){
 
-  sweep_.phase_ = SweepPhase::FIRST;
-  sweep_.step_count_ = 0;
+  if (adc == nullptr || dac == nullptr) return false;
+
+    adc_ = adc;
+    dac_ = dac;
+    channel_id = id;
+    return true;
 }
 
 void Channel::update(UserCmd& cmd){
-  //switch here? with OFF state update like stopping?
+
   switch (cmd.mode){
 
     case Mode::OFF:
@@ -40,6 +48,7 @@ void Channel::update(UserCmd& cmd){
 
       mode = Mode::STEADY;
       time_to_xtickcount(cmd);    
+      steady_.initialized_ = false;
   }
 }
 
@@ -47,10 +56,22 @@ void Channel::steady_run(){
 
   if(!steady_.initialized_){
     steady_.initialized_ = true;
-    //Set DAC
+    dac_ -> setDACVoltage(steady_.voltage_);
     steady_.finish_time_ = xTaskGetTickCount() + steady_.duration_in_ticks_; 
   }
-  //Measure ADC
+
+  float current = adc_ -> readADCChannel(channel_id);
+
+  data = {
+    .channel_id = channel_id,
+    .mode = mode,
+    .voltage = steady_.voltage_,
+    .current = current,
+    .time = pdTICKS_TO_MS(xTaskGetTickCount()),
+  };
+
+  xQueueSend(data_queue, &data, 0);
+
   if (xTaskGetTickCount() > steady_.finish_time_){
     stop();
   } 
@@ -58,12 +79,22 @@ void Channel::steady_run(){
 
 void Channel::sweep_run(){
 
+    dac_ -> setDACVoltage(sweep_.step_count_);
+    vTaskDelay(pdMS_TO_TICKS(5));
+    float current = adc_ -> readADCChannel(channel_id);
+     
+    data = {
+      .channel_id = channel_id,
+      .mode = mode,
+      .voltage = sweep_.step_count_,
+      .current = current,
+      .time = pdTICKS_TO_MS(xTaskGetTickCount()),
+     };
+
+    xQueueSend(data_queue, &data, 0);
+
   switch (sweep_.phase_){
 
-    //DAC set to step_count
-    //Wait for some sec
-    //ADC measure
-    //xQueueSend
 
     case SweepPhase::FIRST:
 
@@ -97,12 +128,14 @@ void Channel::sweep_run(){
   }
 }
 
+
 void Channel::stop(){
-  //Set DAC to 0
+
+  dac_ -> setDACVoltage(0.0f);
   done = true;
   mode = Mode::OFF;
   //Make it so it also writes the channel id.
-  ESP_LOGI(TAG,"Channel stopped, going back to standby mode.");
+  ESP_LOGI(TAG,"Channel %d stopped, going back to standby mode.", channel_id);
 }
 
 

@@ -39,9 +39,6 @@ class SharedSpiBus {
     void endSession();
 
   private:
-#if defined(ARDUINO)
-    SPIClass* spi_ = &SPI;
-#else
     struct DeviceHandleSlot {
       int cs_pin = -1;
       spi_device_handle_t handle = nullptr;
@@ -53,7 +50,6 @@ class SharedSpiBus {
     DeviceHandleSlot device_handles_[kMaxDevices];
     size_t device_handle_count_ = 0;
     spi_device_handle_t current_handle_ = nullptr;
-#endif
 
     const SpiDeviceConfig* current_device_ = nullptr;
     int miso_pin_ = -1;

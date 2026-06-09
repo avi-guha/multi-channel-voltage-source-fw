@@ -14,7 +14,7 @@ class Coordinator{
     Coordinator();
     
     static void coordinator_task(void* arg);
-    bool begin();
+    bool init();
     void run();
 
 
@@ -54,13 +54,10 @@ class Coordinator{
         SpiMode::kMode3,
     };
 
-    bool beginDac(Ad5761& dac, const SpiDeviceConfig& config);
-
-    Channel channel_[NUM_CHANNELS];
-    SharedSpiBus spi_bus_;
-    Ad5761 dac1_;
-    Ad5761 dac2_;
-    Ad5761 dac3_;
-    Ad5761 dac4_;
     Ad7172_2 adc_; 
+    SharedSpiBus spi_bus_;
+    Ad5761 dac_[NUM_CHANNELS];
+    Channel channel_[NUM_CHANNELS];
+    
+    bool beginDac(Ad5761& dac, const SpiDeviceConfig& config);
 };

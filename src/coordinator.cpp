@@ -5,21 +5,15 @@
 static const char* TAG = "Coordinator";
 
 static Coordinator coordinator;
-static Channel channel[NUM_CHANNELS];
-static struct UserCmd cmd;
+UserCmd cmd;
 
-Coordinator::Coordinator()
-    : channel_(), 
-      dac1_(spi_bus_, kDac1SpiConfig),
-      dac2_(spi_bus_, kDac2SpiConfig),
-      dac3_(spi_bus_, kDac3SpiConfig),
-      dac4_(spi_bus_, kDac4SpiConfig),
-      adc_(spi_bus_, kAdcSpiConfig) {}
+
+Coordinator::Coordinator() : adc_(spi_bus_, kAdcSpiConfig) {}
 
 
 void Coordinator::coordinator_task(void* arg){
 
-  if(coordinator.begin()){
+  if(coordinator.init()){
     coordinator.run();
   }
   else{
@@ -27,7 +21,8 @@ void Coordinator::coordinator_task(void* arg){
   }
 }
 
-bool Coordinator::begin(){
+
+bool Coordinator::init(){
 
   const SpiDeviceConfig devices[] = {
       kDac1SpiConfig,
@@ -37,17 +32,9 @@ bool Coordinator::begin(){
       kAdcSpiConfig,
   };
 
-  if (!spi_bus_.begin(pins::kSpiSclk,
-                      pins::kSpiMiso,
-                      pins::kSpiMosi,
-                      devices,
-                      sizeof(devices) / sizeof(devices[0]))) {
+  if (!spi_bus_.begin(pins::kSpiSclk, pins::kSpiMiso, pins::kSpiMosi,
+                      devices, sizeof(devices) / sizeof(devices[0]))) {
     ESP_LOGE(TAG, "shared SPI bus init failed");
-    return false;
-  }
-
-  if (!beginDac(dac1_, kDac1SpiConfig) || !beginDac(dac2_, kDac2SpiConfig) ||
-      !beginDac(dac3_, kDac3SpiConfig) || !beginDac(dac4_, kDac4SpiConfig)) {
     return false;
   }
 
@@ -56,43 +43,61 @@ bool Coordinator::begin(){
     return false;
   }
 
-  ESP_LOGI(TAG, "startup complete: 4 DACs + 1 ADC");
+  for (int i = 0; i < NUM_CHANNELS; i++){
+
+    if (!dac_[i].begin(&spi_bus_, &devices[i]) ){
+      ESP_LOGE(TAG, "DAC %d failed to initialize", i);
+      return false;
+    }
+
+    if (!channel_[i].init(i, &adc_, &dac_[i])){
+      ESP_LOGE(TAG, "Channel %d failed to initialize", i);
+      return false;
+    }
+  }  
+  
+
+  ESP_LOGI(TAG, "startup complete");
   return true;
 }
+
 
 void Coordinator::run(){
 
   while(true){ 
 
     while(xQueueReceive(user_cmd_queue, &cmd, 0) == pdTRUE){
-      channel[cmd.channel_id].update(cmd);
+      channel_[cmd.channel_id].update(cmd);
     }
 
     for(int i = 0; i < NUM_CHANNELS; i++){
 
-      switch(channel[i].mode){
+      switch(channel_[i].mode){
 
         case Mode::OFF:
           break;
 
         case Mode::STEADY:
-          channel[i].steady_run();
+          channel_[i].steady_run();
           break;
 
         case Mode::SWEEP:
-          channel[i].sweep_run();
+          channel_[i].sweep_run();
           break;
       }
     }
   }
 }
 
-bool Coordinator::beginDac(Ad5761& dac, const SpiDeviceConfig& config) {
 
-  if (!dac.begin()) {
-    ESP_LOGE(TAG, "%s init failed", config.name);
-    return false;
-  }
+// bool Coordinator::beginDac(Ad5761& dac, const SpiDeviceConfig& config) {
+//
+//   if (!dac.begin()) {
+//     ESP_LOGE(TAG, "%s init failed", config.name);
+//     return false;
+//   }
+//
+//   return true;
+// }
 
-  return true;
-}
+

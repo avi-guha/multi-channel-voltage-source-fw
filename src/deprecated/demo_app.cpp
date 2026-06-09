@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-#include "deprecated/platform_abstraction.hpp"
+#include "platform_abstraction.hpp"
 
 namespace {
 

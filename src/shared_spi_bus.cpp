@@ -17,21 +17,11 @@ constexpr const char* kLogTag = "SharedSpiBus";
 
 }  // namespace
 
-bool SharedSpiBus::begin(int sclk_pin,
-                         int miso_pin,
-                         int mosi_pin,
-                         const SpiDeviceConfig* devices,
-                         size_t device_count) {
+bool SharedSpiBus::begin(int sclk_pin, int miso_pin, int mosi_pin,
+                         const SpiDeviceConfig* devices, size_t device_count) {
+
   miso_pin_ = miso_pin;
 
-#if defined(ARDUINO)
-  spi_->begin(sclk_pin, miso_pin, mosi_pin);
-  for (size_t i = 0; i < device_count; ++i) {
-    pinMode(devices[i].cs_pin, OUTPUT);
-    digitalWrite(devices[i].cs_pin, HIGH);
-  }
-  return true;
-#else
   spi_bus_config_t bus_config = {};
   bus_config.sclk_io_num = sclk_pin;
   bus_config.mosi_io_num = mosi_pin;
@@ -89,7 +79,6 @@ bool SharedSpiBus::begin(int sclk_pin,
   }
 
   return true;
-#endif
 }
 
 bool SharedSpiBus::beginSession(const SpiDeviceConfig& device) {

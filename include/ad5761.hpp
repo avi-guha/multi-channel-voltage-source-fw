@@ -4,9 +4,9 @@
 
 class Ad5761 {
  public:
-  Ad5761(SharedSpiBus& bus, const SpiDeviceConfig& spi_config);
+  Ad5761();
   static void DAC_task(void* arg);
-  bool begin();
+  bool begin(SharedSpiBus* bus, const SpiDeviceConfig* spi_config);
   void setDACVoltage(float voltage);
 
  private:
@@ -20,6 +20,6 @@ class Ad5761 {
   bool writeCommand(uint8_t command, uint16_t data);
   uint16_t encodeVoltage(float voltage) const;
 
-  SharedSpiBus& bus_;
-  const SpiDeviceConfig& spi_config_;
+  SharedSpiBus* bus_;
+  const SpiDeviceConfig* spi_config_;
 };
