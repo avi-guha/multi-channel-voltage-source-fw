@@ -1,9 +1,9 @@
 #pragma once
 #include "channel.hpp"
-#include "ad5761.hpp"
-#include "ad7172.hpp"
-#include "pin_config.hpp"
-#include "shared_spi_bus.hpp"
+#include "hal/ad5761.hpp"
+#include "hal/ad7172.hpp"
+#include "hal/pin_config.hpp"
+#include "hal/shared_spi_bus.hpp"
 
 
 static constexpr uint8_t NUM_CHANNELS = 4;

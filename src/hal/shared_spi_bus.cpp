@@ -1,4 +1,4 @@
-#include "../include/shared_spi_bus.hpp"
+#include "hal/shared_spi_bus.hpp"
 
 #include <cstring>
 
@@ -9,7 +9,7 @@
 #include "esp_err.h"
 #endif
 
-#include "../include/platform_abstraction.hpp"
+#include "hal/platform_abstraction.hpp"
 
 namespace {
 

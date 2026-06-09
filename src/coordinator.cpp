@@ -55,7 +55,6 @@ bool Coordinator::init(){
       return false;
     }
   }  
-  
 
   ESP_LOGI(TAG, "startup complete");
   return true;

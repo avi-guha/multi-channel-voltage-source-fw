@@ -1,7 +1,7 @@
 #pragma once
 #include "task_comms.hpp"
-#include "ad5761.hpp"
-#include "ad7172.hpp"
+#include "hal/ad5761.hpp"
+#include "hal/ad7172.hpp"
 
 
 enum class SweepPhase { FIRST, SECOND, THIRD};

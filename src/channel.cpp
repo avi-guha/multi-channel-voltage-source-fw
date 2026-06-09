@@ -15,6 +15,7 @@ Channel::Channel()
     adc_(nullptr),
     dac_(nullptr) {}
 
+
 bool Channel::init(uint8_t id, Ad7172_2* adc, Ad5761* dac){
 
   if (adc == nullptr || dac == nullptr) return false;
@@ -24,6 +25,7 @@ bool Channel::init(uint8_t id, Ad7172_2* adc, Ad5761* dac){
     channel_id = id;
     return true;
 }
+
 
 void Channel::update(UserCmd& cmd){
 
@@ -52,6 +54,7 @@ void Channel::update(UserCmd& cmd){
   }
 }
 
+
 void Channel::steady_run(){
 
   if(!steady_.initialized_){
@@ -76,6 +79,7 @@ void Channel::steady_run(){
     stop();
   } 
 }
+
 
 void Channel::sweep_run(){
 
@@ -157,6 +161,7 @@ void Channel::time_to_xtickcount(UserCmd& cmd){
   }
 
 }
+
 
 void Channel::sweep_steps_config(UserCmd& cmd){
 

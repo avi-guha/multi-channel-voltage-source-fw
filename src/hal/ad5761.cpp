@@ -1,10 +1,10 @@
-#include "../include/ad5761.hpp"
+#include "hal/ad5761.hpp"
 
 #include <algorithm>
 #include <cmath>
 
-#include "../include/pin_config.hpp"
-#include "../include/platform_abstraction.hpp"
+#include "hal/pin_config.hpp"
+#include "hal/platform_abstraction.hpp"
 
 namespace {
 
@@ -18,7 +18,9 @@ Ad5761::Ad5761()
       spi_config_(nullptr) {}
 
 bool Ad5761::begin(SharedSpiBus* bus, const SpiDeviceConfig* spi_config) {
-   
+
+  if (bus == nullptr || spi_config == nullptr) return false; 
+
   bus_ = bus;
   spi_config_ = spi_config;
 
@@ -36,7 +38,7 @@ bool Ad5761::begin(SharedSpiBus* bus, const SpiDeviceConfig* spi_config) {
   setDACVoltage(0.0f);
   platform::logInfo(kLogTag,
                     "%s initialized with +/-5 V range, command clamp %.1f V to %.1f V",
-                    spi_config_->name,
+                    spi_config_ -> name,
                     app_config::kDacTargetMinVoltage,
                     app_config::kDacTargetMaxVoltage);
   return true;

@@ -1,10 +1,10 @@
-#include "../include/ad7172.hpp"
+#include "hal/ad7172.hpp"
 
 #include <cmath>
 #include <limits>
 
-#include "../include/pin_config.hpp"
-#include "../include/platform_abstraction.hpp"
+#include "hal/pin_config.hpp"
+#include "hal/platform_abstraction.hpp"
 
 namespace {
 
