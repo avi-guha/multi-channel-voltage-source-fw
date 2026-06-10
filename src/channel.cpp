@@ -145,18 +145,18 @@ void Channel::stop(){
 
 void Channel::time_to_xtickcount(UserCmd& cmd){
 
-  switch(cmd.time_unit){
+  switch(cmd.param.Steady.time_unit){
     // Converts human readable time to FreeRTOS's xtasktick_count 
     case TimeUnit::Sec:
-      steady_.duration_in_ticks_ = pdMS_TO_TICKS(cmd.duration * 1000);
+      steady_.duration_in_ticks_ = pdMS_TO_TICKS(cmd.param.Steady.duration * 1000);
       break;
 
     case TimeUnit::Min:
-      steady_.duration_in_ticks_ = pdMS_TO_TICKS(cmd.duration * 60000);
+      steady_.duration_in_ticks_ = pdMS_TO_TICKS(cmd.param.Steady.duration * 60000);
       break;
 
     case TimeUnit::Hour:
-      steady_.duration_in_ticks_ = pdMS_TO_TICKS(cmd.duration * 360000);
+      steady_.duration_in_ticks_ = pdMS_TO_TICKS(cmd.param.Steady.duration * 360000);
       break;
   }
 

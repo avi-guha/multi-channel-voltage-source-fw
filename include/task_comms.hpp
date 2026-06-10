@@ -9,6 +9,8 @@ enum class TimeUnit : uint8_t { Sec, Min, Hour };
 
 struct SteadyParams{
   float voltage;
+  float duration;
+  TimeUnit time_unit;
 };
 
 
@@ -21,13 +23,10 @@ struct SweepParams{
 struct UserCmd{
   uint8_t channel_id;
   Mode mode;
-  float duration;
-  TimeUnit time_unit;
   union {
     struct SteadyParams Steady;
     struct SweepParams Sweep;
   } param;
-  bool valid;
 };
 
 
@@ -44,4 +43,5 @@ extern QueueHandle_t data_queue;
 extern QueueHandle_t user_cmd_queue;
 extern QueueHandle_t event_queue;
 
+void log_task (void* arg);
 void user_cmd_task(void* arg);

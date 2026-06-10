@@ -8,7 +8,7 @@ static Coordinator coordinator;
 UserCmd cmd;
 
 
-Coordinator::Coordinator() : adc_(spi_bus_, kAdcSpiConfig) {}
+Coordinator::Coordinator(): adc_(spi_bus_, kAdcSpiConfig) {}
 
 
 void Coordinator::coordinator_task(void* arg){
@@ -87,16 +87,4 @@ void Coordinator::run(){
     }
   }
 }
-
-
-// bool Coordinator::beginDac(Ad5761& dac, const SpiDeviceConfig& config) {
-//
-//   if (!dac.begin()) {
-//     ESP_LOGE(TAG, "%s init failed", config.name);
-//     return false;
-//   }
-//
-//   return true;
-// }
-
 
