@@ -18,7 +18,7 @@ if("${CONFIG}" STREQUAL "" OR "${CONFIG}" STREQUAL "")
   "ldgen_libraries.in"
   "multi_channel_voltage_source_fw.bin"
   "multi_channel_voltage_source_fw.map"
-  "project_elf_src_esp32s3.c"
+  "project_elf_src_esp32.c"
   "x509_crt_bundle.S"
   )
 endif()

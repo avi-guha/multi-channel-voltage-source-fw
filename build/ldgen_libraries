@@ -23,7 +23,6 @@
 /home/ta1/voltage-source/build/esp-idf/esp_ringbuf/libesp_ringbuf.a
 /home/ta1/voltage-source/build/esp-idf/esp_mm/libesp_mm.a
 /home/ta1/voltage-source/build/esp-idf/vfs/libvfs.a
-/home/ta1/voltage-source/build/esp-idf/esp_driver_usb_serial_jtag/libesp_driver_usb_serial_jtag.a
 /home/ta1/voltage-source/build/esp-idf/esp_vfs_console/libesp_vfs_console.a
 /home/ta1/voltage-source/build/esp-idf/mbedtls/mbedtls/library/libmbedtls.a
 /home/ta1/voltage-source/build/esp-idf/mbedtls/mbedtls/library/libmbedx509.a
@@ -36,7 +35,6 @@
 /home/ta1/voltage-source/build/esp-idf/app_update/libapp_update.a
 /home/ta1/voltage-source/build/esp-idf/esp_app_format/libesp_app_format.a
 /home/ta1/voltage-source/build/esp-idf/esp_bootloader_format/libesp_bootloader_format.a
-/home/ta1/voltage-source/build/esp-idf/esp_mm/libesp_mm.a
 /home/ta1/voltage-source/build/esp-idf/esp_gdbstub/libesp_gdbstub.a
 /home/ta1/voltage-source/build/esp-idf/driver/libdriver.a
 /home/ta1/voltage-source/build/esp-idf/esp_driver_pcnt/libesp_driver_pcnt.a
@@ -47,8 +45,9 @@
 /home/ta1/voltage-source/build/esp-idf/esp_driver_sdmmc/libesp_driver_sdmmc.a
 /home/ta1/voltage-source/build/esp-idf/sdmmc/libsdmmc.a
 /home/ta1/voltage-source/build/esp-idf/esp_driver_sdspi/libesp_driver_sdspi.a
+/home/ta1/voltage-source/build/esp-idf/esp_driver_sdio/libesp_driver_sdio.a
+/home/ta1/voltage-source/build/esp-idf/esp_driver_dac/libesp_driver_dac.a
 /home/ta1/voltage-source/build/esp-idf/esp_driver_rmt/libesp_driver_rmt.a
-/home/ta1/voltage-source/build/esp-idf/esp_driver_tsens/libesp_driver_tsens.a
 /home/ta1/voltage-source/build/esp-idf/esp_driver_sdm/libesp_driver_sdm.a
 /home/ta1/voltage-source/build/esp-idf/esp_driver_i2c/libesp_driver_i2c.a
 /home/ta1/voltage-source/build/esp-idf/esp_driver_ledc/libesp_driver_ledc.a
@@ -78,6 +77,7 @@
 /home/ta1/voltage-source/build/esp-idf/esp_partition/libesp_partition.a
 /home/ta1/voltage-source/build/esp-idf/efuse/libefuse.a
 /home/ta1/voltage-source/build/esp-idf/bootloader_support/libbootloader_support.a
+/home/ta1/voltage-source/build/esp-idf/esp_mm/libesp_mm.a
 /home/ta1/voltage-source/build/esp-idf/spi_flash/libspi_flash.a
 /home/ta1/voltage-source/build/esp-idf/esp_system/libesp_system.a
 /home/ta1/voltage-source/build/esp-idf/esp_common/libesp_common.a
@@ -99,7 +99,6 @@
 /home/ta1/voltage-source/build/esp-idf/esp_event/libesp_event.a
 /home/ta1/voltage-source/build/esp-idf/nvs_flash/libnvs_flash.a
 /home/ta1/voltage-source/build/esp-idf/esp_phy/libesp_phy.a
-/home/ta1/voltage-source/build/esp-idf/esp_driver_usb_serial_jtag/libesp_driver_usb_serial_jtag.a
 /home/ta1/voltage-source/build/esp-idf/esp_vfs_console/libesp_vfs_console.a
 /home/ta1/voltage-source/build/esp-idf/lwip/liblwip.a
 /home/ta1/voltage-source/build/esp-idf/esp_netif/libesp_netif.a
@@ -118,8 +117,9 @@
 /home/ta1/voltage-source/build/esp-idf/sdmmc/libsdmmc.a
 /home/ta1/voltage-source/build/esp-idf/esp_driver_sdmmc/libesp_driver_sdmmc.a
 /home/ta1/voltage-source/build/esp-idf/esp_driver_sdspi/libesp_driver_sdspi.a
+/home/ta1/voltage-source/build/esp-idf/esp_driver_sdio/libesp_driver_sdio.a
+/home/ta1/voltage-source/build/esp-idf/esp_driver_dac/libesp_driver_dac.a
 /home/ta1/voltage-source/build/esp-idf/esp_driver_rmt/libesp_driver_rmt.a
-/home/ta1/voltage-source/build/esp-idf/esp_driver_tsens/libesp_driver_tsens.a
 /home/ta1/voltage-source/build/esp-idf/esp_driver_sdm/libesp_driver_sdm.a
 /home/ta1/voltage-source/build/esp-idf/esp_driver_i2c/libesp_driver_i2c.a
 /home/ta1/voltage-source/build/esp-idf/esp_driver_ledc/libesp_driver_ledc.a
@@ -155,8 +155,14 @@
 /home/ta1/voltage-source/build/esp-idf/perfmon/libperfmon.a
 /home/ta1/voltage-source/build/esp-idf/rt/librt.a
 /home/ta1/voltage-source/build/esp-idf/spiffs/libspiffs.a
-/home/ta1/voltage-source/build/esp-idf/touch_element/libtouch_element.a
-/home/ta1/voltage-source/build/esp-idf/usb/libusb.a
 /home/ta1/voltage-source/build/esp-idf/wifi_provisioning/libwifi_provisioning.a
 /home/ta1/voltage-source/build/esp-idf/json/libjson.a
+/home/ta1/voltage-source/build/esp-idf/adc/libadc.a
+/home/ta1/voltage-source/build/esp-idf/dac/libdac.a
+/home/ta1/voltage-source/build/esp-idf/driver_hal/libdriver_hal.a
+/home/ta1/voltage-source/build/esp-idf/adc/libadc.a
+/home/ta1/voltage-source/build/esp-idf/dac/libdac.a
+/home/ta1/voltage-source/build/esp-idf/app/libapp.a
+/home/ta1/voltage-source/build/esp-idf/driver_hal/libdriver_hal.a
 /home/ta1/voltage-source/build/esp-idf/main/libmain.a
+/home/ta1/voltage-source/build/esp-idf/app/libapp.a
