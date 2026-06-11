@@ -1,0 +1,4 @@
+.cache/*
+.clangd
+.DS_Store
+codex.md

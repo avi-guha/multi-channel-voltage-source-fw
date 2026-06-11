@@ -5,8 +5,8 @@ QueueHandle_t event_queue;
 QueueHandle_t data_queue;
 QueueHandle_t user_cmd_queue;
 
- UserCmd cmd;
- DataLog data;
+UserCmd cmd;
+DataLog data;
 
 
 void user_cmd_task(void* arg){
