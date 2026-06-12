@@ -1,0 +1,15 @@
+graph TD
+    accTitle: Steady Mode Flow Chart
+
+    A[Enter steady mode] --> B{Initialized}
+    B --> |No| C[Set DAC voltage]
+    C --> K[Start timer]
+    B --> |Yes| D[Read ADC]
+    K --> D
+    D --> E[Send measured data to Data logging task]
+    E --> F{Timer done}
+    F --> |No| A
+    F --> |Yes| G[Set DAC to 0V]
+    G --> H[Set mode to Standby mode]
+    H --> I[Done]    
+

@@ -1,0 +1,20 @@
+graph TD
+    W[Continue] --> G{Check sweep phase}
+    G --> |Phase 1: 0V to upper voltage bound| H{Voltage counter less than positive voltage limit} 
+    H --> |Yes| I[Increment voltage counter by step size]
+    H --> |No| J[Set sweep phase to phase 2]
+    I --> Z[Done]
+    J --> Z[Done]
+
+    G --> |Phase 2: Positive to negative voltage limit| K{Voltage counter higher than negative voltage limit} 
+    K --> |Yes| L[Decrement voltage counter by step size]
+    K --> |No| M[Set sweep phase to phase 3]
+    L --> Z[Done]
+    M --> Z[Done]
+
+    G --> |Phase 3: Negative voltage limit to 0V| N{Voltage counter less than 0V} 
+    N --> |Yes| O[Increment voltage counter by step size]
+    O --> Z[Done]
+    N --> |No| P[Set DAC voltage to 0V]
+    P --> Q[Set mode to standy mode]
+    Q --> Z[Done]
