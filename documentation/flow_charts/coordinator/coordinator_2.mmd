@@ -1,0 +1,19 @@
+graph TD
+    A[Continue] --> B[Enter Coordinator::run infinite loop]
+    B --> C{User command queue empty}
+    C -->|No| D[Update specified channel's inner-state based on command]
+    D --> B
+    C -->|Yes| E[int j = 0]
+
+    subgraph ForEachChannel["For each channel j"]
+        E --> F{j < number of channels}
+        F -->|True| G{jth channel mode}
+        G -->|Standby| INC[j = j++]
+        G -->|Steady| H[Run steady mode operation on jth channel]
+        G -->|Sweep| I[Run sweep mode operation on jth channel]
+        H --> INC
+        I --> INC
+        INC --> F
+    end
+
+    F -->|False| B
