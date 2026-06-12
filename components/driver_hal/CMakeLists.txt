@@ -1,5 +1,5 @@
 idf_component_register(
-  SRCS "ad5761.cpp" "ad7172.cpp" "shared_spi_bus.cpp"
+  SRCS "adc.cpp" "dac.cpp" "ad5761.cpp" "ad7172.cpp" "shared_spi_bus.cpp"
   INCLUDE_DIRS "include"
   REQUIRES adc
            dac
