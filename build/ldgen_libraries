@@ -159,9 +159,11 @@
 /home/ta1/voltage-source/build/esp-idf/json/libjson.a
 /home/ta1/voltage-source/build/esp-idf/adc/libadc.a
 /home/ta1/voltage-source/build/esp-idf/dac/libdac.a
+/home/ta1/voltage-source/build/esp-idf/esp32_spi/libesp32_spi.a
 /home/ta1/voltage-source/build/esp-idf/driver_hal/libdriver_hal.a
 /home/ta1/voltage-source/build/esp-idf/adc/libadc.a
 /home/ta1/voltage-source/build/esp-idf/dac/libdac.a
+/home/ta1/voltage-source/build/esp-idf/esp32_spi/libesp32_spi.a
 /home/ta1/voltage-source/build/esp-idf/app/libapp.a
 /home/ta1/voltage-source/build/esp-idf/driver_hal/libdriver_hal.a
 /home/ta1/voltage-source/build/esp-idf/main/libmain.a

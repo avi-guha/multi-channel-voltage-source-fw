@@ -858,6 +858,13 @@
 /home/ta1/voltage-source/build/esp-idf/dac/CMakeFiles/install.dir
 /home/ta1/voltage-source/build/esp-idf/dac/CMakeFiles/install/local.dir
 /home/ta1/voltage-source/build/esp-idf/dac/CMakeFiles/install/strip.dir
+/home/ta1/voltage-source/build/esp-idf/esp32_spi/CMakeFiles/__idf_esp32_spi.dir
+/home/ta1/voltage-source/build/esp-idf/esp32_spi/CMakeFiles/edit_cache.dir
+/home/ta1/voltage-source/build/esp-idf/esp32_spi/CMakeFiles/rebuild_cache.dir
+/home/ta1/voltage-source/build/esp-idf/esp32_spi/CMakeFiles/list_install_components.dir
+/home/ta1/voltage-source/build/esp-idf/esp32_spi/CMakeFiles/install.dir
+/home/ta1/voltage-source/build/esp-idf/esp32_spi/CMakeFiles/install/local.dir
+/home/ta1/voltage-source/build/esp-idf/esp32_spi/CMakeFiles/install/strip.dir
 /home/ta1/voltage-source/build/esp-idf/driver_hal/CMakeFiles/__idf_driver_hal.dir
 /home/ta1/voltage-source/build/esp-idf/driver_hal/CMakeFiles/edit_cache.dir
 /home/ta1/voltage-source/build/esp-idf/driver_hal/CMakeFiles/rebuild_cache.dir
