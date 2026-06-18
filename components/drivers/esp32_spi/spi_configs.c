@@ -1,5 +1,9 @@
 #include "spi_configs.h"
+#include "pin_config.h"
+#include "no_os_esp32_spi.h"
 
+#define AD7172_2_INIT
+#include "ad7172_2_regs.h"
 
 spi_config_extra_t config_extra = {
   .host = SPI2_HOST,
@@ -41,11 +45,106 @@ struct no_os_spi_init_param spi_config = {
   .parent = NULL
 };
 
+const uint8_t ad7172_2_num_regs = sizeof(ad7172_2_regs) / sizeof(ad7172_2_regs[0]);
 
-ad717x_init_param adc_init_param = {
-  .num_regs = NUM_CHANNELS,
-  .active_device = ID_AD7172_2,
-  .ref_en = true,
-  .num_channels = NUM_CHANNELS,
-  .mode = CONTINUOUS
+struct ad717x_channel_map chan_map[NUM_CHANNELS] = {
+  [0] = {
+    .channel_enable = true,
+    .setup_sel = 0,
+    .analog_inputs = {
+      .ainp = {
+        .pos_analog_input = AIN0,
+        .neg_analog_input = AIN4
+      }
+    }
+  }, 
+  [1] = {
+    .channel_enable = true,
+    .setup_sel = 0,
+    .analog_inputs = {
+      .ainp = {
+        .pos_analog_input = AIN1,
+        .neg_analog_input = AIN4
+      }
+    }
+  }, 
+  [2] = {
+    .channel_enable = true,
+    .setup_sel = 0,
+    .analog_inputs = {
+      .ainp = {
+        .pos_analog_input = AIN2,
+        .neg_analog_input = AIN4
+      }
+    }
+  }, 
+  [3] = {
+    .channel_enable = true,
+    .setup_sel = 0,
+    .analog_inputs = {
+      .ainp = {
+        .pos_analog_input = AIN3,
+        .neg_analog_input = AIN4
+      }
+    } 
+  }
 };
+
+struct ad717x_channel_setup setup[NUM_CHANNELS] = {
+  [0] = {
+    .bi_unipolar = true,
+    .ref_buff = false,
+    .input_buff = false,
+    .ref_source = EXTERNAL_REF
+  },
+  [1] = {
+    .bi_unipolar = true,
+    .ref_buff = false,
+    .input_buff = false,
+    .ref_source = EXTERNAL_REF
+  },
+  [2] = {
+    .bi_unipolar = true,
+    .ref_buff = false,
+    .input_buff = false,
+    .ref_source = EXTERNAL_REF
+  },
+  [3] = {
+    .bi_unipolar = true,
+    .ref_buff = false,
+    .input_buff = false,
+    .ref_source = EXTERNAL_REF
+  }
+};
+
+uint32_t pga[NUM_CHANNELS] = {[0] = 100, [1] = 100, [2] = 100, [3] = 100};
+
+
+struct ad717x_filtcon filtcon[NUM_CHANNELS] = {
+  [0] = {
+    .sinc3_map = false,
+    .enhfilten = false,
+    .oder = sinc5_sinc1,
+    .odr = sps_1007
+  },
+  [1] = {
+    .sinc3_map = false,
+    .enhfilten = false,
+    .oder = sinc5_sinc1,
+    .odr = sps_1007
+  },
+  [2] = {
+    .sinc3_map = false,
+    .enhfilten = false,
+    .oder = sinc5_sinc1,
+    .odr = sps_1007
+  },
+  [3] = {
+    .sinc3_map = false,
+    .enhfilten = false,
+    .oder = sinc5_sinc1,
+    .odr = sps_1007
+  }
+};
+
+

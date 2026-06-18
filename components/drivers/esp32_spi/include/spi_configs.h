@@ -3,10 +3,8 @@
 
 #include "ad717x.h"
 #include "ad5761r.h"
-#include "pin_config.h"
-#include <driver/spi_master.h>
 #include "no_os_spi.h"
-#include "no_os_esp32_spi.h"
+#include <driver/spi_master.h>
 
 #define NUM_CHANNELS 4
 
@@ -22,5 +20,13 @@ extern struct no_os_spi_platform_ops platform_ops;
 extern struct no_os_spi_init_param spi_config;
 
 extern ad717x_init_param adc_init_param;
+
+extern ad717x_st_reg ad7172_2_regs[];
+extern const uint8_t ad7172_2_num_regs;
+extern struct ad717x_channel_map chan_map[NUM_CHANNELS];
+extern struct ad717x_channel_setup setup[NUM_CHANNELS];
+
+uint32_t pga[NUM_CHANNELS];
+extern struct ad717x_filtcon filtcon[NUM_CHANNELS];
 
 #endif

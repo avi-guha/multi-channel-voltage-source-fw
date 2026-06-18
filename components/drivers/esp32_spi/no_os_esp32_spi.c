@@ -1,26 +1,29 @@
 #include <esp_log.h>
 #include <esp_err.h>
-#include <no_os_spi.h>
-#include <no_os_alloc.h>
 #include <driver/gpio.h>
 #include <driver/spi_master.h>
-#include "no_os_esp32_spi.h"
+#include "no_os_spi.h"
+#include "no_os_alloc.h"
 #include "spi_configs.h"
+#include "no_os_esp32_spi.h"
 
+#define TAG "ESP32-SPI"
 
 int32_t esp32_spi_init(struct no_os_spi_desc **desc, const struct no_os_spi_init_param *param){
 
+  if (param == NULL) return -1;
+
   struct no_os_spi_desc *d = no_os_calloc(1, sizeof(*d));
   spi_config_extra_t *esp32_spi_config = (spi_config_extra_t *)param->extra; 
-  
-  uint32_t speed = param->max_speed_hz;
-  uint8_t cs = param->chip_select;
-  uint8_t mode = param->mode;
-
   spi_host_device_t host = esp32_spi_config->host; 
   spi_bus_config_t bus_config = esp32_spi_config->bus;
 
-  spi_bus_initialize(host, &bus_config, SPI_DMA_DISABLED);
+  const esp_err_t init_result = spi_bus_initialize(host, &bus_config, SPI_DMA_DISABLED);
+  if ((init_result != ESP_OK) && (init_result != ESP_ERR_INVALID_STATE)) {
+    ESP_LOGE(TAG, "spi_bus_initialize failed: %d", (int)init_result);
+    return -1;
+  }
+
   *desc = d;
   return 0;
 }

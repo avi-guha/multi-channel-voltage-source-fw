@@ -7,6 +7,7 @@
 
 
 static constexpr uint8_t NUM_CHANNELS = 4;
+extern ad717x_st_reg ad7172_2_regs[];
 
 class Coordinator{
 
@@ -19,12 +20,11 @@ class Coordinator{
 
 
   private:
-    no_os_spi_desc *spi_desc_;
     spi_host_device_t host_ = SPI2_HOST;
     spi_bus_config_t bus_config_;
+    no_os_spi_desc *spi_desc_;
     ad717x_dev *adc_dev_;
     ad5761r_dev *dac_dev_[NUM_CHANNELS];
     Channel channel_[NUM_CHANNELS];
-    
-    // bool beginDac(Ad5761& dac, const SpiDeviceConfig& config);
+
 };
