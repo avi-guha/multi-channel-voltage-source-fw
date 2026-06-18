@@ -3,16 +3,24 @@
 #include <no_os_spi.h>
 #include <no_os_alloc.h>
 #include <driver/gpio.h>
-#include "include/spi_bus.h"
+#include <driver/spi_master.h>
+#include "no_os_esp32_spi.h"
+#include "spi_configs.h"
 
 
 int32_t esp32_spi_init(struct no_os_spi_desc **desc, const struct no_os_spi_init_param *param){
 
   struct no_os_spi_desc *d = no_os_calloc(1, sizeof(*d));
+  spi_config_extra_t *esp32_spi_config = (spi_config_extra_t *)param->extra; 
+  
+  uint32_t speed = param->max_speed_hz;
+  uint8_t cs = param->chip_select;
+  uint8_t mode = param->mode;
 
-  // const esp_err_t init = spi_bus_initialize(); 
+  spi_host_device_t host = esp32_spi_config->host; 
+  spi_bus_config_t bus_config = esp32_spi_config->bus;
 
-
+  spi_bus_initialize(host, &bus_config, SPI_DMA_DISABLED);
   *desc = d;
   return 0;
 }

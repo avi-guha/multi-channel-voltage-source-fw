@@ -8,7 +8,6 @@ extern "C" {
 #include "ad5761r.h"
 }
 
-#include "ad5761.hpp"
 #include "pin_config.hpp"
 
 class Dac{

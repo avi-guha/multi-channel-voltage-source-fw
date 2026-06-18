@@ -7,7 +7,6 @@ static constexpr const char* TAG = "Channel";
 extern UserCmd cmd;
 extern DataLog data;
 
-
 Channel::Channel()
   : channel_id(0),
     mode(Mode::OFF),
@@ -169,4 +168,3 @@ void Channel::sweep_steps_config(UserCmd& cmd){
 
   sweep_.single_sweep_steps_ = sweep_.range_in_mV_ / sweep_.step_size_;
 }
-

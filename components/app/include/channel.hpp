@@ -1,8 +1,6 @@
 #pragma once
 
 #include "task_comms.hpp"
-#include "ad5761.hpp"
-#include "ad7172.hpp"
 
 
 enum class SweepPhase { FIRST, SECOND, THIRD};
@@ -15,7 +13,7 @@ class Channel{
     Mode mode;
     bool done;
     
-    bool init(uint8_t channel_id,Ad7172_2* adc, Ad5761* dac);
+    // bool init(uint8_t channel_id,Ad7172_2* adc, Ad5761* dac);
     void update(UserCmd& cmd); 
     void sweep_run();
     void steady_run();
@@ -42,8 +40,8 @@ class Channel{
     SteadyParams steady_;
     SweepParams sweep_;
 
-    Ad7172_2* adc_;
-    Ad5761* dac_;
+    // Ad7172_2* adc_;
+    // Ad5761* dac_;
     void time_to_xtickcount(UserCmd& cmd); 
     void sweep_steps_config(UserCmd& cmd);
 };

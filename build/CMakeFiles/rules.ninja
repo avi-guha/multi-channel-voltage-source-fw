@@ -1821,25 +1821,6 @@ rule C_STATIC_LIBRARY_LINKER____idf_wifi_provisioning_
 #############################################
 # Rule for compiling C files.
 
-rule C_COMPILER____idf_adc_unscanned_
-  depfile = $DEP_FILE
-  deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}/nix/store/mki4nsr1cw3h2mpqywym2x14lwsj36ax-xtensa-esp-elf-esp-idf-v5.5.2/bin/xtensa-esp32-elf-gcc $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
-  description = Building C object $out
-
-
-#############################################
-# Rule for linking C static library.
-
-rule C_STATIC_LIBRARY_LINKER____idf_adc_
-  command = $PRE_LINK && /nix/store/w9jm660dykns6hzrdhxmqfywnc9ail8g-cmake-4.1.2/bin/cmake -E rm -f $TARGET_FILE && /nix/store/mki4nsr1cw3h2mpqywym2x14lwsj36ax-xtensa-esp-elf-esp-idf-v5.5.2/bin/xtensa-esp32-elf-ar qc $TARGET_FILE $LINK_FLAGS $in && /nix/store/mki4nsr1cw3h2mpqywym2x14lwsj36ax-xtensa-esp-elf-esp-idf-v5.5.2/bin/xtensa-esp32-elf-ranlib $TARGET_FILE && $POST_BUILD
-  description = Linking C static library $TARGET_FILE
-  restat = $RESTAT
-
-
-#############################################
-# Rule for compiling C files.
-
 rule C_COMPILER____idf_dac_unscanned_
   depfile = $DEP_FILE
   deps = gcc
@@ -1870,6 +1851,25 @@ rule C_COMPILER____idf_esp32_spi_unscanned_
 # Rule for linking C static library.
 
 rule C_STATIC_LIBRARY_LINKER____idf_esp32_spi_
+  command = $PRE_LINK && /nix/store/w9jm660dykns6hzrdhxmqfywnc9ail8g-cmake-4.1.2/bin/cmake -E rm -f $TARGET_FILE && /nix/store/mki4nsr1cw3h2mpqywym2x14lwsj36ax-xtensa-esp-elf-esp-idf-v5.5.2/bin/xtensa-esp32-elf-ar qc $TARGET_FILE $LINK_FLAGS $in && /nix/store/mki4nsr1cw3h2mpqywym2x14lwsj36ax-xtensa-esp-elf-esp-idf-v5.5.2/bin/xtensa-esp32-elf-ranlib $TARGET_FILE && $POST_BUILD
+  description = Linking C static library $TARGET_FILE
+  restat = $RESTAT
+
+
+#############################################
+# Rule for compiling C files.
+
+rule C_COMPILER____idf_adc_unscanned_
+  depfile = $DEP_FILE
+  deps = gcc
+  command = ${LAUNCHER}${CODE_CHECK}/nix/store/mki4nsr1cw3h2mpqywym2x14lwsj36ax-xtensa-esp-elf-esp-idf-v5.5.2/bin/xtensa-esp32-elf-gcc $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  description = Building C object $out
+
+
+#############################################
+# Rule for linking C static library.
+
+rule C_STATIC_LIBRARY_LINKER____idf_adc_
   command = $PRE_LINK && /nix/store/w9jm660dykns6hzrdhxmqfywnc9ail8g-cmake-4.1.2/bin/cmake -E rm -f $TARGET_FILE && /nix/store/mki4nsr1cw3h2mpqywym2x14lwsj36ax-xtensa-esp-elf-esp-idf-v5.5.2/bin/xtensa-esp32-elf-ar qc $TARGET_FILE $LINK_FLAGS $in && /nix/store/mki4nsr1cw3h2mpqywym2x14lwsj36ax-xtensa-esp-elf-esp-idf-v5.5.2/bin/xtensa-esp32-elf-ranlib $TARGET_FILE && $POST_BUILD
   description = Linking C static library $TARGET_FILE
   restat = $RESTAT

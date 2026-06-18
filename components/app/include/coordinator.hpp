@@ -1,10 +1,9 @@
 #pragma once
 
 #include "channel.hpp"
-#include "ad5761.hpp"
-#include "ad7172.hpp"
-#include "pin_config.hpp"
 #include "shared_spi_bus.hpp"
+#include "ad717x.h"
+#include "ad5761r.h"
 
 
 static constexpr uint8_t NUM_CHANNELS = 4;
@@ -20,45 +19,12 @@ class Coordinator{
 
 
   private:
-    static constexpr SpiDeviceConfig kDac1SpiConfig{
-      "AD5761-1",
-        pins::kDacCs1,
-        app_config::kDacClockHz,
-        SpiMode::kMode2,
-    };
-
-    static constexpr SpiDeviceConfig kDac2SpiConfig{
-      "AD5761-2",
-        pins::kDacCs2,
-        app_config::kDacClockHz,
-        SpiMode::kMode2,
-    };
-
-    static constexpr SpiDeviceConfig kDac3SpiConfig{
-      "AD5761-3",
-        pins::kDacCs3,
-        app_config::kDacClockHz,
-        SpiMode::kMode2,
-    };
-
-    static constexpr SpiDeviceConfig kDac4SpiConfig{
-      "AD5761-4",
-        pins::kDacCs4,
-        app_config::kDacClockHz,
-        SpiMode::kMode2,
-    };
-
-    static constexpr SpiDeviceConfig kAdcSpiConfig{
-      "AD7172-2",
-        pins::kAdcCs,
-        app_config::kAdcClockHz,
-        SpiMode::kMode3,
-    };
-
-    Ad7172_2 adc_; 
-    SharedSpiBus spi_bus_;
-    Ad5761 dac_[NUM_CHANNELS];
+    no_os_spi_desc *spi_desc_;
+    spi_host_device_t host_ = SPI2_HOST;
+    spi_bus_config_t bus_config_;
+    ad717x_dev *adc_dev_;
+    ad5761r_dev *dac_dev_[NUM_CHANNELS];
     Channel channel_[NUM_CHANNELS];
     
-    bool beginDac(Ad5761& dac, const SpiDeviceConfig& config);
+    // bool beginDac(Ad5761& dac, const SpiDeviceConfig& config);
 };
