@@ -7,20 +7,20 @@ static constexpr const char* TAG = "Channel";
 extern UserCmd cmd;
 extern DataLog data;
 
+
 Channel::Channel()
   : channel_id(0),
     mode(Mode::OFF),
-    done(false),
-    adc_(nullptr),
-    dac_(nullptr) {}
+    done(false) {}
 
 
-bool Channel::init(uint8_t id, Ad7172_2* adc, Ad5761* dac){
+bool Channel::init(uint8_t id, ad717x_dev* adc_dev, ad5761r_dev* dac_dev){
+    
 
-  if (adc == nullptr || dac == nullptr) return false;
+  if (adc_dev == nullptr || dac_dev == nullptr) return false;
 
-    adc_ = adc;
-    dac_ = dac;
+    adc_dev_ = adc_dev;
+    dac_dev_ = dac_dev;
     channel_id = id;
     return true;
 }

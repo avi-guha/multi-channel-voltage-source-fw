@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ad717x.h"
+#include "ad5761r.h"
 #include "task_comms.hpp"
 
 
@@ -13,7 +15,7 @@ class Channel{
     Mode mode;
     bool done;
     
-    // bool init(uint8_t channel_id,Ad7172_2* adc, Ad5761* dac);
+    bool init(uint8_t id, ad717x_dev* adc_dev, ad5761r_dev* dac_dev);
     void update(UserCmd& cmd); 
     void sweep_run();
     void steady_run();
@@ -40,8 +42,9 @@ class Channel{
     SteadyParams steady_;
     SweepParams sweep_;
 
-    // Ad7172_2* adc_;
-    // Ad5761* dac_;
+    ad717x_dev* adc_dev_;
+    ad5761r_dev* dac_dev_;
+
     void time_to_xtickcount(UserCmd& cmd); 
     void sweep_steps_config(UserCmd& cmd);
 };

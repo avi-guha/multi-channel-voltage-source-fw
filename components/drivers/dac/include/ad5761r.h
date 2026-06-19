@@ -32,6 +32,7 @@
 *******************************************************************************/
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "no_os_gpio.h"
 #include "no_os_spi.h"
 

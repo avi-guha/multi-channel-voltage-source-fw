@@ -5,6 +5,7 @@
 #define AD7172_2_INIT
 #include "ad7172_2_regs.h"
 
+//no OS SPI config
 spi_config_extra_t config_extra = {
   .host = SPI2_HOST,
   .bus = {
@@ -45,7 +46,9 @@ struct no_os_spi_init_param spi_config = {
   .parent = NULL
 };
 
+//ADC config
 const uint8_t ad7172_2_num_regs = sizeof(ad7172_2_regs) / sizeof(ad7172_2_regs[0]);
+
 
 struct ad717x_channel_map chan_map[NUM_CHANNELS] = {
   [0] = {
@@ -90,6 +93,7 @@ struct ad717x_channel_map chan_map[NUM_CHANNELS] = {
   }
 };
 
+
 struct ad717x_channel_setup setup[NUM_CHANNELS] = {
   [0] = {
     .bi_unipolar = true,
@@ -116,6 +120,7 @@ struct ad717x_channel_setup setup[NUM_CHANNELS] = {
     .ref_source = EXTERNAL_REF
   }
 };
+
 
 uint32_t pga[NUM_CHANNELS] = {[0] = 100, [1] = 100, [2] = 100, [3] = 100};
 

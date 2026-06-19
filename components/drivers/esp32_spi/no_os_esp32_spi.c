@@ -15,10 +15,10 @@ int32_t esp32_spi_init(struct no_os_spi_desc **desc, const struct no_os_spi_init
 
   struct no_os_spi_desc *d = no_os_calloc(1, sizeof(*d));
   spi_config_extra_t *esp32_spi_config = (spi_config_extra_t *)param->extra; 
-  spi_host_device_t host = esp32_spi_config->host; 
-  spi_bus_config_t bus_config = esp32_spi_config->bus;
 
-  const esp_err_t init_result = spi_bus_initialize(host, &bus_config, SPI_DMA_DISABLED);
+  const esp_err_t init_result = 
+    spi_bus_initialize(esp32_spi_config->host, &esp32_spi_config->bus, SPI_DMA_DISABLED);
+
   if ((init_result != ESP_OK) && (init_result != ESP_ERR_INVALID_STATE)) {
     ESP_LOGE(TAG, "spi_bus_initialize failed: %d", (int)init_result);
     return -1;

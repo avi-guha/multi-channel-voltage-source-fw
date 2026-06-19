@@ -32,7 +32,6 @@ bool Coordinator::init(){
     return false;
   }
 
-
   ad717x_init_param adc_init_param = {
     .spi_init = spi_config,
     .regs = ad7172_2_regs, 
@@ -48,30 +47,35 @@ bool Coordinator::init(){
     .mode = CONTINUOUS
   };
 
-  
   if (AD717X_Init(&adc_dev_, adc_init_param) < 0){
     ESP_LOGE(TAG, "ADC init failed");
     return false;
   }
+  
+  ad5761r_init_param dac_init_param = {
+    .spi_init = spi_config,
+    .type = AD5761R,
+    .out_range = AD5761R_RANGE_M_5V_TO_P_5V,
+    .pwr_voltage = AD5761R_SCALE_ZERO,
+    .clr_voltage = AD5761R_SCALE_ZERO,
+    .int_ref_en = false,
+    .exc_temp_sd_en = true,
+    .ovr_en = false,
+    .daisy_chain_en = false
+  };
 
-  // 
-  // if (!adc_.begin()) {
-  //   ESP_LOGE(TAG, "%s init failed", kAdcSpiConfig.name);
-  //   return false;
-  // }
-  //
-  // for (int i = 0; i < NUM_CHANNELS; i++){
-  //
-  //   if (!dac_[i].begin(&spi_bus_, &devices[i]) ){
-  //     ESP_LOGE(TAG, "DAC %d failed to initialize", i);
-  //     return false;
-  //   }
-  //
-  //   if (!channel_[i].init(i, &adc_, &dac_[i])){
-  //     ESP_LOGE(TAG, "Channel %d failed to initialize", i);
-  //     return false;
-  //   }
-  // }  
+  for (int i = 0; i < NUM_CHANNELS; i++){
+
+    if (ad5761r_init(&dac_dev_[i], dac_init_param) < 0 ){
+      ESP_LOGE(TAG, "DAC %d failed to initialize", i);
+      return false;
+    }
+
+    if (!channel_[i].init(i, adc_dev_, dac_dev_[i])){
+      ESP_LOGE(TAG, "Channel %d failed to initialize", i);
+      return false;
+    }
+  }  
 
   ESP_LOGI(TAG, "startup complete");
   return true;
