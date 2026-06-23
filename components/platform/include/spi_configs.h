@@ -10,20 +10,40 @@
 /*
  * no OS SPI config
  */
-typedef struct spi_config_extra {
+typedef struct {
   spi_host_device_t host;
-  spi_bus_config_t bus; 
-} spi_config_extra_t;
+  spi_bus_config_t bus;
+} esp32_spi_config_t;
 
-extern spi_config_extra_t config_extra;
 
+extern esp32_spi_config_t spi_config;
 extern struct no_os_spi_platform_ops platform_ops;
 
-extern struct no_os_spi_init_param spi_config;
+
+/*
+ * DAC SPI config
+ */
+extern struct no_os_spi_init_param dac0_config;
+
+extern struct no_os_spi_init_param dac1_config;
+
+extern struct no_os_spi_init_param dac2_config;
+
+extern struct no_os_spi_init_param dac3_config;
+
+struct no_os_spi_init_param *dac_config[NUM_CHANNELS] = {
+ &dac0_config,
+ &dac1_config,
+ &dac2_config,
+ &dac3_config 
+};
+
 
 /*
  * ADC SPI config
  */
+extern struct no_os_spi_init_param adc_config;
+
 extern ad717x_init_param adc_init_param;
 
 extern ad717x_st_reg ad7172_2_regs[];
@@ -38,7 +58,3 @@ uint32_t pga[NUM_CHANNELS];
 
 extern struct ad717x_filtcon filtcon[NUM_CHANNELS];
 
-
-/*
- * DAC SPI config
- */

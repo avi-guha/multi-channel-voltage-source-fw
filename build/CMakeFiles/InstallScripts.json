@@ -119,11 +119,10 @@
 		"/home/ta1/voltage-source/build/esp-idf/ulp/cmake_install.cmake",
 		"/home/ta1/voltage-source/build/esp-idf/usb/cmake_install.cmake",
 		"/home/ta1/voltage-source/build/esp-idf/wifi_provisioning/cmake_install.cmake",
-		"/home/ta1/voltage-source/build/esp-idf/no_os_include/cmake_install.cmake",
+		"/home/ta1/voltage-source/build/esp-idf/no_os/cmake_install.cmake",
 		"/home/ta1/voltage-source/build/esp-idf/dac/cmake_install.cmake",
-		"/home/ta1/voltage-source/build/esp-idf/esp32_spi/cmake_install.cmake",
+		"/home/ta1/voltage-source/build/esp-idf/platform/cmake_install.cmake",
 		"/home/ta1/voltage-source/build/esp-idf/adc/cmake_install.cmake",
-		"/home/ta1/voltage-source/build/esp-idf/driver_hal/cmake_install.cmake",
 		"/home/ta1/voltage-source/build/esp-idf/app/cmake_install.cmake",
 		"/home/ta1/voltage-source/build/esp-idf/main/cmake_install.cmake"
 	],

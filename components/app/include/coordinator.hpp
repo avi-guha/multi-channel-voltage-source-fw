@@ -1,5 +1,6 @@
 #pragma once
 
+#include <driver/spi_master.h>
 #include "ad717x.h"
 #include "ad5761r.h"
 #include "channel.hpp"

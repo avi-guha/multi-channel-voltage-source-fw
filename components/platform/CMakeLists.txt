@@ -1,9 +1,9 @@
 idf_component_register(
-  SRCS  "dac.cpp" "shared_spi_bus.cpp" 
+  SRCS "no_os_esp32_spi.c" "spi_configs.c"
   INCLUDE_DIRS "include"
-  REQUIRES adc
+  REQUIRES no_os
+           adc
            dac
-           esp32_spi
            esp_driver_spi
            esp_driver_gpio
            esp_timer

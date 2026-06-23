@@ -58,12 +58,14 @@ void Channel::steady_run(){
 
   if(!steady_.initialized_){
     steady_.initialized_ = true;
-    dac_ -> setDACVoltage(steady_.voltage_);
+    ad5761r_write_update_dac_register(dac_dev_, steady_.voltage_);
     steady_.finish_time_ = xTaskGetTickCount() + steady_.duration_in_ticks_; 
   }
-
-  float current = adc_ -> readADCChannel(channel_id);
-
+  
+  AD717X_WaitForReady(adc_dev_, 2);
+  AD717X_ReadData(adc_dev_, &voltage_read);
+  float current = static_cast<float>(voltage_read) / R_1K;
+  
   data = {
     .channel_id = channel_id,
     .mode = mode,
@@ -80,19 +82,23 @@ void Channel::steady_run(){
 }
 
 
+
 void Channel::sweep_run(){
 
-    dac_ -> setDACVoltage(sweep_.step_count_);
-    vTaskDelay(pdMS_TO_TICKS(5));
-    float current = adc_ -> readADCChannel(channel_id);
-     
-    data = {
-      .channel_id = channel_id,
-      .mode = mode,
-      .voltage = sweep_.step_count_,
-      .current = current,
-      .time = pdTICKS_TO_MS(xTaskGetTickCount()),
-     };
+  ad5761r_write_update_dac_register(dac_dev_, sweep_.step_count_);
+  vTaskDelay(pdMS_TO_TICKS(2));
+  
+  AD717X_WaitForReady(adc_dev_, 2);
+  AD717X_ReadData(adc_dev_, &voltage_read);
+  float current = static_cast<float>(voltage_read) / R_1K;
+
+  data = {
+    .channel_id = channel_id,
+    .mode = mode,
+    .voltage = sweep_.step_count_,
+    .current = current,
+    .time = pdTICKS_TO_MS(xTaskGetTickCount()),
+  };
 
     xQueueSend(data_queue, &data, 0);
 
@@ -134,7 +140,7 @@ void Channel::sweep_run(){
 
 void Channel::stop(){
 
-  dac_ -> setDACVoltage(0.0f);
+  ad5761r_write_update_dac_register(dac_dev_, 0); 
   done = true;
   mode = Mode::OFF;
   ESP_LOGI(TAG,"Channel %d stopped, going back to standby mode.", channel_id);
@@ -168,3 +174,4 @@ void Channel::sweep_steps_config(UserCmd& cmd){
 
   sweep_.single_sweep_steps_ = sweep_.range_in_mV_ / sweep_.step_size_;
 }
+

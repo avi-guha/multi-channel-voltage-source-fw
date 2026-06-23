@@ -4,7 +4,7 @@
 #include "ad5761r.h"
 #include "task_comms.hpp"
 
-
+constexpr const float R_1K = 1000;
 enum class SweepPhase { FIRST, SECOND, THIRD};
 
 class Channel{
@@ -25,7 +25,7 @@ class Channel{
 
     struct SteadyParams{
       bool initialized_ = false;
-      int voltage_ = 0;
+      uint16_t voltage_ = 0;
       TickType_t duration_in_ticks_ = 0;
       TickType_t finish_time_ = 0;
     };
@@ -34,7 +34,7 @@ class Channel{
       SweepPhase phase_ = SweepPhase::FIRST;
       float range_in_mV_ = 0.0f;
       float step_size_ = 0.0f;
-      int step_count_ = 0;
+      uint16_t step_count_ = 0;
       uint32_t single_sweep_steps_ = 0;
       uint32_t total_steps_ = 0;
     };
@@ -45,6 +45,9 @@ class Channel{
     ad717x_dev* adc_dev_;
     ad5761r_dev* dac_dev_;
 
+    int32_t voltage_read;
+
     void time_to_xtickcount(UserCmd& cmd); 
     void sweep_steps_config(UserCmd& cmd);
+
 };

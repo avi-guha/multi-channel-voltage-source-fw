@@ -3,5 +3,6 @@ idf_component_register(
   INCLUDE_DIRS "include"
   REQUIRES adc
            dac
-           driver_hal
+           platform
+           no_os
 )

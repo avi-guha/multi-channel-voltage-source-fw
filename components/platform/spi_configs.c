@@ -5,8 +5,8 @@
 #define AD7172_2_INIT
 #include "ad7172_2_regs.h"
 
-//no OS SPI config
-spi_config_extra_t config_extra = {
+
+esp32_spi_config_t spi_config = {
   .host = SPI2_HOST,
   .bus = {
     .sclk_io_num = SPI_SCLK,
@@ -14,26 +14,24 @@ spi_config_extra_t config_extra = {
     .miso_io_num = SPI_MISO,
     .quadwp_io_num = -1,
     .quadhd_io_num = -1,
-    .max_transfer_sz = 32
+    .max_transfer_sz = 0
   }
 };
-
 
 struct no_os_spi_platform_ops platform_ops = {
   .init = esp32_spi_init,
   .write_and_read = esp32_spi_write_read,
-  .transfer = esp32_spi_transfer,
+  .transfer = NULL,
   .transfer_dma = NULL,
   .transfer_dma_async = NULL,
   .remove = esp32_spi_remove,
-  .transfer_abort = esp32_spi_transfer_abort
+  .transfer_abort = NULL
 };
 
-
-struct no_os_spi_init_param spi_config = {
-  .device_id = 5,
+struct no_os_spi_init_param dac0_config = {
+  .device_id = 0,
   .max_speed_hz = DAC_FREQ,
-  .chip_select = 0,
+  .chip_select = CS_DAC0,
   .mode = NO_OS_SPI_MODE_3,
   .bit_order = NO_OS_SPI_BIT_ORDER_MSB_FIRST,
   .lanes = NO_OS_SPI_SINGLE_LANE,
@@ -42,11 +40,71 @@ struct no_os_spi_init_param spi_config = {
     .cs_delay_first = 0,
     .cs_delay_last = 0
   },
-  .extra = &config_extra,
   .parent = NULL
 };
 
+struct no_os_spi_init_param dac1_config = {
+  .device_id = 1,
+  .max_speed_hz = DAC_FREQ,
+  .chip_select = CS_DAC1,
+  .mode = NO_OS_SPI_MODE_3,
+  .bit_order = NO_OS_SPI_BIT_ORDER_MSB_FIRST,
+  .lanes = NO_OS_SPI_SINGLE_LANE,
+  .platform_ops = &platform_ops,
+  .platform_delays = {
+    .cs_delay_first = 0,
+    .cs_delay_last = 0
+  },
+  .parent = NULL
+};
+
+struct no_os_spi_init_param dac2_config = {
+  .device_id = 2,
+  .max_speed_hz = DAC_FREQ,
+  .chip_select = CS_DAC2,
+  .mode = NO_OS_SPI_MODE_3,
+  .bit_order = NO_OS_SPI_BIT_ORDER_MSB_FIRST,
+  .lanes = NO_OS_SPI_SINGLE_LANE,
+  .platform_ops = &platform_ops,
+  .platform_delays = {
+    .cs_delay_first = 0,
+    .cs_delay_last = 0
+  },
+  .parent = NULL
+};
+
+struct no_os_spi_init_param dac3_config = {
+  .device_id = 3,
+  .max_speed_hz = DAC_FREQ,
+  .chip_select = CS_DAC0,
+  .mode = NO_OS_SPI_MODE_3,
+  .bit_order = NO_OS_SPI_BIT_ORDER_MSB_FIRST,
+  .lanes = NO_OS_SPI_SINGLE_LANE,
+  .platform_ops = &platform_ops,
+  .platform_delays = {
+    .cs_delay_first = 0,
+    .cs_delay_last = 0
+  },
+  .parent = NULL
+};
+
+
 //ADC config
+struct no_os_spi_init_param adc_config = {
+  .device_id = 5,
+  .max_speed_hz = ADC_FREQ,
+  .chip_select = CS_ADC,
+  .mode = NO_OS_SPI_MODE_3,
+  .bit_order = NO_OS_SPI_BIT_ORDER_MSB_FIRST,
+  .lanes = NO_OS_SPI_SINGLE_LANE,
+  .platform_ops = &platform_ops,
+  .platform_delays = {
+    .cs_delay_first = 0,
+    .cs_delay_last = 0
+  },
+  .parent = NULL
+};
+
 const uint8_t ad7172_2_num_regs = sizeof(ad7172_2_regs) / sizeof(ad7172_2_regs[0]);
 
 
