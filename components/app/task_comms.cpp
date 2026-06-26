@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <cstring>
 #include "task_comms.hpp"
 
@@ -10,6 +11,7 @@ DataLog data;
 
 
 void user_cmd_task(void* arg){
+  printf("yo");
 
   char buffer[128];
   char* token;
@@ -34,14 +36,17 @@ void user_cmd_task(void* arg){
 
       token = strtok_r(buffer, delimiter, &saveptr);
 
-      if(strcmp(token, "Sec")){
-        cmd.param.Steady.time_unit = TimeUnit::Sec;
-      }
-      else if(strcmp(token, "Min")){
-        cmd.param.Steady.time_unit = TimeUnit::Min;
+      if(strcmp(token, "Min")){
+        cmd.param.Steady.time_unit = TimeUnit::MIN;
       }
       else if(strcmp(token, "Hour")){
-        cmd.param.Steady.time_unit = TimeUnit::Hour;
+        cmd.param.Steady.time_unit = TimeUnit::HOUR;
+      }
+      else if(strcmp(token, "Day")){
+        cmd.param.Steady.time_unit = TimeUnit::DAY;
+      }
+      else if(strcmp(token, "Month")){
+        cmd.param.Steady.time_unit = TimeUnit::MONTH;
       }
     }
     else if (strcmp(token,"SWEEP")){
@@ -57,14 +62,14 @@ void user_cmd_task(void* arg){
 
 
 void log_task (void* arg){
-  // while(true){
-  //   if(xQueueReceive(data_queue, &data, 0) == pdTRUE){
-  //     printf("data, %d, %d, %d, %.3f, %d", 
-  //         data.channel_id, 
-  //         data.mode, 
-  //         data.voltage, 
-  //         data.current, 
-  //         data.time);
-  //   }
-  // }
+  while(true){
+    if(xQueueReceive(data_queue, &data, 0) == pdTRUE){
+      printf("data, %d, %d, %d, %.3f, %lu", 
+          data.channel_id, 
+          (int)data.mode, 
+          data.voltage, 
+          data.current, 
+          (unsigned long)data.time
+      );  }
+  }
 }

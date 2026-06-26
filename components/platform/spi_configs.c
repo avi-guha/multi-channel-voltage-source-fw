@@ -88,6 +88,12 @@ struct no_os_spi_init_param dac3_config = {
   .parent = NULL
 };
 
+struct no_os_spi_init_param *dac_config[NUM_CHANNELS] = {
+ &dac0_config,
+ &dac1_config,
+ &dac2_config,
+ &dac3_config 
+};
 
 //ADC config
 struct no_os_spi_init_param adc_config = {

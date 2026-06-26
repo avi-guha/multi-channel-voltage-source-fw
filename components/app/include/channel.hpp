@@ -1,7 +1,10 @@
 #pragma once
 
-#include "ad717x.h"
-#include "ad5761r.h"
+extern "C" {
+  #include "ad717x.h"
+  #include "ad5761r.h"
+}
+
 #include "task_comms.hpp"
 
 constexpr const float R_1K = 1000;
@@ -25,6 +28,7 @@ class Channel{
 
     struct SteadyParams{
       bool initialized_ = false;
+      bool timer_en_ = false;
       uint16_t voltage_ = 0;
       TickType_t duration_in_ticks_ = 0;
       TickType_t finish_time_ = 0;
@@ -34,7 +38,7 @@ class Channel{
       SweepPhase phase_ = SweepPhase::FIRST;
       float range_in_mV_ = 0.0f;
       float step_size_ = 0.0f;
-      uint16_t step_count_ = 0;
+      int32_t voltage_ = 0;
       uint32_t single_sweep_steps_ = 0;
       uint32_t total_steps_ = 0;
     };

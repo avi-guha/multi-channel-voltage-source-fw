@@ -65,6 +65,7 @@ bool Coordinator::init(){
     .exc_temp_sd_en = true,
     .ovr_en = false,
     .daisy_chain_en = false
+    // Ignore warnings since gpio are not used
   };
 
   for (int i = 0; i < NUM_CHANNELS; i++){

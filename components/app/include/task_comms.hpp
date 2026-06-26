@@ -5,7 +5,7 @@
 
 
 enum class Mode : uint8_t { SWEEP, STEADY, OFF};
-enum class TimeUnit : uint8_t { Sec, Min, Hour };
+enum class TimeUnit : uint8_t {MIN, HOUR, DAY, MONTH, INF};
 
 
 struct SteadyParams{

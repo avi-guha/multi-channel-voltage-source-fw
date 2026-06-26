@@ -2,6 +2,7 @@
 #include "channel.hpp"
 #include "task_comms.hpp"
 
+
 static constexpr const char* TAG = "Channel";
 
 extern UserCmd cmd;
@@ -42,7 +43,7 @@ void Channel::update(UserCmd& cmd){
       mode = Mode::SWEEP;
       sweep_.phase_ = SweepPhase::FIRST; 
       sweep_steps_config(cmd);
-      sweep_.step_count_ = 0;
+      sweep_.voltage_ = 0;
       break;
 
     case Mode::STEADY:
@@ -59,7 +60,10 @@ void Channel::steady_run(){
   if(!steady_.initialized_){
     steady_.initialized_ = true;
     ad5761r_write_update_dac_register(dac_dev_, steady_.voltage_);
-    steady_.finish_time_ = xTaskGetTickCount() + steady_.duration_in_ticks_; 
+
+    if(steady_.timer_en_){
+      steady_.finish_time_ = xTaskGetTickCount() + steady_.duration_in_ticks_; 
+    }
   }
   
   AD717X_WaitForReady(adc_dev_, 2);
@@ -85,7 +89,7 @@ void Channel::steady_run(){
 
 void Channel::sweep_run(){
 
-  ad5761r_write_update_dac_register(dac_dev_, sweep_.step_count_);
+  ad5761r_write_update_dac_register(dac_dev_, sweep_.voltage_);
   vTaskDelay(pdMS_TO_TICKS(2));
   
   AD717X_WaitForReady(adc_dev_, 2);
@@ -95,7 +99,7 @@ void Channel::sweep_run(){
   data = {
     .channel_id = channel_id,
     .mode = mode,
-    .voltage = sweep_.step_count_,
+    .voltage = sweep_.voltage_,
     .current = current,
     .time = pdTICKS_TO_MS(xTaskGetTickCount()),
   };
@@ -107,8 +111,8 @@ void Channel::sweep_run(){
 
     case SweepPhase::FIRST:
 
-      if (sweep_.step_count_ < sweep_.range_in_mV_){
-        sweep_.step_count_ += sweep_.step_size_;
+      if (sweep_.voltage_ < sweep_.range_in_mV_){
+        sweep_.voltage_ += sweep_.step_size_;
       }
       else{
         sweep_.phase_ = SweepPhase::SECOND;
@@ -117,8 +121,8 @@ void Channel::sweep_run(){
 
     case SweepPhase::SECOND:
 
-      if (sweep_.step_count_ > - sweep_.range_in_mV_){
-        sweep_.step_count_ -= sweep_.step_size_;
+      if (sweep_.voltage_ > - sweep_.range_in_mV_){
+        sweep_.voltage_ -= sweep_.step_size_;
       }
       else{
         sweep_.phase_ = SweepPhase::THIRD;
@@ -127,8 +131,8 @@ void Channel::sweep_run(){
 
     case SweepPhase::THIRD:
 
-      if (sweep_.step_count_ < 0){
-        sweep_.step_count_ += sweep_.step_size_;
+      if (sweep_.voltage_ < 0){
+        sweep_.voltage_ += sweep_.step_size_;
       }
       else{
         stop();
@@ -150,17 +154,29 @@ void Channel::stop(){
 void Channel::time_to_xtickcount(UserCmd& cmd){
 
   switch(cmd.param.Steady.time_unit){
-    // Converts human readable time to FreeRTOS's xtasktick_count 
-    case TimeUnit::Sec:
-      steady_.duration_in_ticks_ = pdMS_TO_TICKS(cmd.param.Steady.duration * 1000);
-      break;
 
-    case TimeUnit::Min:
+    case TimeUnit::MIN:
       steady_.duration_in_ticks_ = pdMS_TO_TICKS(cmd.param.Steady.duration * 60000);
+      steady_.timer_en_ = true;
       break;
 
-    case TimeUnit::Hour:
+    case TimeUnit::HOUR:
       steady_.duration_in_ticks_ = pdMS_TO_TICKS(cmd.param.Steady.duration * 360000);
+      steady_.timer_en_ = true;
+      break;
+
+    case TimeUnit::DAY:
+      steady_.duration_in_ticks_ = pdMS_TO_TICKS(cmd.param.Steady.duration * 360000 * 24);
+      steady_.timer_en_ = true;
+      break;
+
+    case TimeUnit::MONTH:
+      steady_.duration_in_ticks_ = pdMS_TO_TICKS(cmd.param.Steady.duration * 360000 * 24 * 31);
+      steady_.timer_en_ = true;
+      break;
+
+    default:
+      steady_.timer_en_ = false;
       break;
   }
 

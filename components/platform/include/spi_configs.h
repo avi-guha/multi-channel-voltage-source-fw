@@ -31,12 +31,7 @@ extern struct no_os_spi_init_param dac2_config;
 
 extern struct no_os_spi_init_param dac3_config;
 
-struct no_os_spi_init_param *dac_config[NUM_CHANNELS] = {
- &dac0_config,
- &dac1_config,
- &dac2_config,
- &dac3_config 
-};
+extern struct no_os_spi_init_param *dac_config[NUM_CHANNELS];
 
 
 /*
@@ -54,7 +49,7 @@ extern struct ad717x_channel_map chan_map[NUM_CHANNELS];
 
 extern struct ad717x_channel_setup setup[NUM_CHANNELS];
 
-uint32_t pga[NUM_CHANNELS];
+extern uint32_t pga[NUM_CHANNELS];
 
 extern struct ad717x_filtcon filtcon[NUM_CHANNELS];
 
