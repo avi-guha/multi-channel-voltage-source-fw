@@ -435,6 +435,9 @@ int32_t AD717X_ReadRegister(ad717x_dev *device,
 	if (ret < 0)
 		return ret;
 
+printf("read addr=0x%02lx bytes: %02x %02x %02x %02x %02x\n",
+               pReg->addr,
+               buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
 	/* Check the CRC */
 	if (device->useCRC == AD717X_USE_CRC) {
 		msgBuf[0] = AD717X_COMM_REG_WEN | AD717X_COMM_REG_RD |
@@ -443,6 +446,7 @@ int32_t AD717X_ReadRegister(ad717x_dev *device,
 			msgBuf[i] = buffer[i];
 		}
 		check8 = AD717X_ComputeCRC8(msgBuf, pReg->size + 2);
+  printf("%d \n",check8);
 	}
 	if (device->useCRC == AD717X_USE_XOR) {
 		msgBuf[0] = AD717X_COMM_REG_WEN | AD717X_COMM_REG_RD |
@@ -451,12 +455,15 @@ int32_t AD717X_ReadRegister(ad717x_dev *device,
 			msgBuf[i] = buffer[i];
 		}
 		check8 = AD717X_ComputeXOR8(msgBuf, pReg->size + 2);
+
 	}
 
 	if (check8 != 0) {
 		/* ReadRegister checksum failed. */
+  printf("%d \n",check8);
 		return COMM_ERR;
 	}
+  printf("wow\n");
 
 	/* Build the result */
 	pReg->value = 0;
@@ -837,21 +844,25 @@ int32_t AD717X_Init(ad717x_dev **device,
 
 	/* Read ID register to identify the part */
 	ret = AD717X_ReadRegister(dev, AD717X_ID_REG);
+  printf("f\n");
 	if (ret < 0)
 		return ret;
 	dev->active_device = init_param.active_device;
 	dev->num_channels = init_param.num_channels;
 
+  printf("f\n");
 	for (setup_index = 0; setup_index < init_param.num_setups; setup_index++) {
 		/* Set Polarity */
 		ret = ad717x_set_polarity(dev, init_param.setups[setup_index].bi_unipolar,
 					  setup_index);
+  printf("j\n");
 		if (ret < 0)
 			return ret;
 
 		/* Select the reference source */
 		ret = ad717x_set_reference_source(dev,
 						  init_param.setups[setup_index].ref_source, setup_index);
+  printf("i\n");
 		if (ret < 0)
 			return ret;
 
@@ -860,17 +871,20 @@ int32_t AD717X_Init(ad717x_dev **device,
 					    init_param.setups[setup_index].input_buff,
 					    init_param.setups[setup_index].ref_buff,
 					    setup_index);
+  printf("h\n");
 		if (ret < 0)
 			return ret;
 
 		ret = ad717x_configure_device_odr(dev, setup_index,
 						  init_param.filter_configuration[setup_index].odr);
+  printf("k\n");
 		if (ret < 0)
 			return ret;
 	}
 
 	/* Set Conversion Mode */
 	ret = ad717x_set_adc_mode(dev, init_param.mode);
+  printf("g\n");
 	if (ret < 0)
 		return ret;
 

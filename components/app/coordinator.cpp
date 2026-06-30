@@ -15,13 +15,13 @@ Coordinator::Coordinator() {}
 
 
 void Coordinator::coordinator_task(void* arg){
-
-  if(coordinator.init()){
-    coordinator.run();
-  }
-  else{
-    ESP_LOGE(TAG,"Failed to start");
-  }
+    if(coordinator.init()){
+      coordinator.run();
+    }
+    else{
+      ESP_LOGE(TAG,"Failed to start");
+      vTaskDelete(nullptr);
+    }
 }
 
 
@@ -34,6 +34,7 @@ bool Coordinator::init(){
     return false;
   }
 
+    ESP_LOGI(TAG, "%d", init_result);
 
   ad717x_init_param adc_init_param = {
     .spi_init = adc_config,
@@ -49,6 +50,8 @@ bool Coordinator::init(){
     .filter_configuration = {filtcon[0], filtcon[1], filtcon[2], filtcon[3]},
     .mode = CONTINUOUS
   };
+
+  vTaskDelay(pdMS_TO_TICKS(100));
 
   if (AD717X_Init(&adc_dev_, adc_init_param) < 0){
     ESP_LOGE(TAG, "ADC init failed");

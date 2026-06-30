@@ -7,7 +7,7 @@
 
 
 esp32_spi_config_t spi_config = {
-  .host = SPI2_HOST,
+  .host = SPI3_HOST,
   .bus = {
     .sclk_io_num = SPI_SCLK,
     .mosi_io_num = SPI_MOSI,
@@ -40,7 +40,8 @@ struct no_os_spi_init_param dac0_config = {
     .cs_delay_first = 0,
     .cs_delay_last = 0
   },
-  .parent = NULL
+  .parent = NULL,
+  .extra = &spi_config
 };
 
 struct no_os_spi_init_param dac1_config = {
@@ -55,7 +56,8 @@ struct no_os_spi_init_param dac1_config = {
     .cs_delay_first = 0,
     .cs_delay_last = 0
   },
-  .parent = NULL
+  .parent = NULL,
+  .extra = &spi_config
 };
 
 struct no_os_spi_init_param dac2_config = {
@@ -70,13 +72,14 @@ struct no_os_spi_init_param dac2_config = {
     .cs_delay_first = 0,
     .cs_delay_last = 0
   },
-  .parent = NULL
+  .parent = NULL,
+  .extra = &spi_config
 };
 
 struct no_os_spi_init_param dac3_config = {
   .device_id = 3,
   .max_speed_hz = DAC_FREQ,
-  .chip_select = CS_DAC0,
+  .chip_select = CS_DAC3,
   .mode = NO_OS_SPI_MODE_3,
   .bit_order = NO_OS_SPI_BIT_ORDER_MSB_FIRST,
   .lanes = NO_OS_SPI_SINGLE_LANE,
@@ -85,7 +88,8 @@ struct no_os_spi_init_param dac3_config = {
     .cs_delay_first = 0,
     .cs_delay_last = 0
   },
-  .parent = NULL
+  .parent = NULL,
+  .extra = &spi_config
 };
 
 struct no_os_spi_init_param *dac_config[NUM_CHANNELS] = {
@@ -108,7 +112,8 @@ struct no_os_spi_init_param adc_config = {
     .cs_delay_first = 0,
     .cs_delay_last = 0
   },
-  .parent = NULL
+  .parent = NULL,
+  .extra = &spi_config
 };
 
 const uint8_t ad7172_2_num_regs = sizeof(ad7172_2_regs) / sizeof(ad7172_2_regs[0]);
@@ -163,25 +168,25 @@ struct ad717x_channel_setup setup[NUM_CHANNELS] = {
     .bi_unipolar = true,
     .ref_buff = false,
     .input_buff = false,
-    .ref_source = EXTERNAL_REF
+    .ref_source = INTERNAL_REF
   },
   [1] = {
     .bi_unipolar = true,
     .ref_buff = false,
     .input_buff = false,
-    .ref_source = EXTERNAL_REF
+    .ref_source = INTERNAL_REF
   },
   [2] = {
     .bi_unipolar = true,
     .ref_buff = false,
     .input_buff = false,
-    .ref_source = EXTERNAL_REF
+    .ref_source = INTERNAL_REF
   },
   [3] = {
     .bi_unipolar = true,
     .ref_buff = false,
     .input_buff = false,
-    .ref_source = EXTERNAL_REF
+    .ref_source = INTERNAL_REF
   }
 };
 

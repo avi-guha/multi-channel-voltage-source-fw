@@ -4,7 +4,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     esp-dev.url = "github:mirrexagon/nixpkgs-esp-dev";
-    # We let esp-dev use its own nixpkgs internally so it can find its older dependencies
+# We let esp-dev use its own nixpkgs internally so it can find its older dependencies
   };
 
   outputs = {
@@ -31,6 +31,13 @@
       buildInputs = [
         esp-idf
       ];
+      shellHook = ''
+        alias esp32='idf.py set-target esp32'
+        alias b='idf.py build'
+        alias fm='idf.py -p /dev/ttyUSB0 flash && idf.py monitor'
+        alias f='idf.py -p /dev/ttyUSB0 flash'
+        alias m='idf.py monitor'
+      '';
     };
   };
 }

@@ -11,7 +11,6 @@ DataLog data;
 
 
 void user_cmd_task(void* arg){
-  printf("yo");
 
   char buffer[128];
   char* token;
@@ -20,8 +19,10 @@ void user_cmd_task(void* arg){
 
   while(true){
 
-    fgets(buffer, sizeof(buffer), stdin);
-
+    if (fgets(buffer, sizeof(buffer), stdin) == nullptr){
+      vTaskDelay(pdMS_TO_TICKS(20));
+      continue;
+    }
     cmd.channel_id = atoi(strtok_r(buffer, delimiter, &saveptr));
 
     token = strtok_r(buffer, delimiter, &saveptr);
@@ -63,8 +64,8 @@ void user_cmd_task(void* arg){
 
 void log_task (void* arg){
   while(true){
-    if(xQueueReceive(data_queue, &data, 0) == pdTRUE){
-      printf("data, %d, %d, %d, %.3f, %lu", 
+    if(xQueueReceive(data_queue, &data, portMAX_DELAY) == pdTRUE){
+      printf("data, %d, %d, %d, %.3f, %lu \n", 
           data.channel_id, 
           (int)data.mode, 
           data.voltage, 
