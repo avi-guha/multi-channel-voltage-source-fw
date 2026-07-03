@@ -4,6 +4,8 @@
 #include "ad717x.h"
 #include "ad5761r.h"
 #include "spi_configs.h"
+#include "driver/gpio.h"
+#include "pin_config.h"
 
 static constexpr const char* TAG = "Coordinator";
 
@@ -16,6 +18,8 @@ Coordinator::Coordinator() {}
 
 void Coordinator::coordinator_task(void* arg){
     if(coordinator.init()){
+
+  ESP_LOGI(TAG, "hello");
       coordinator.run();
     }
     else{
@@ -27,6 +31,13 @@ void Coordinator::coordinator_task(void* arg){
 
 bool Coordinator::init(){
 
+  gpio_config(&cs_high);
+  gpio_set_level(static_cast<gpio_num_t>(CS_ADC), 1);
+  gpio_set_level(static_cast<gpio_num_t>(CS_DAC0), 1);
+  gpio_set_level(static_cast<gpio_num_t>(CS_DAC1), 1);
+  gpio_set_level(static_cast<gpio_num_t>(CS_DAC2), 1);
+  gpio_set_level(static_cast<gpio_num_t>(CS_DAC3), 1);
+
   const esp_err_t init_result = 
     spi_bus_initialize(spi_config.host, &spi_config.bus, SPI_DMA_DISABLED);
   if ((init_result != ESP_OK) && (init_result != ESP_ERR_INVALID_STATE)) {
@@ -34,7 +45,6 @@ bool Coordinator::init(){
     return false;
   }
 
-    ESP_LOGI(TAG, "%d", init_result);
 
   ad717x_init_param adc_init_param = {
     .spi_init = adc_config,
@@ -67,7 +77,7 @@ bool Coordinator::init(){
     .int_ref_en = false,
     .exc_temp_sd_en = true,
     .ovr_en = false,
-    .daisy_chain_en = false
+    .daisy_chain_en = false,
     // Ignore warnings since gpio are not used
   };
 

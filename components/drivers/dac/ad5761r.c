@@ -650,7 +650,7 @@ int32_t ad5761r_init(struct ad5761r_dev **device,
 	struct ad5761r_dev *dev;
 	int32_t ret = 0;
 
-	dev = (struct ad5761r_dev *)no_os_malloc(sizeof(*dev));
+	dev = (struct ad5761r_dev *)no_os_calloc(1, sizeof(*dev));
 	if (!dev) {
 		return -1;
 	}

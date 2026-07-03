@@ -32,7 +32,7 @@ int32_t esp32_spi_init(struct no_os_spi_desc **desc, const struct no_os_spi_init
     .spics_io_num = param->chip_select,
     .mode = param->mode,
     .queue_size = 1,
-    .input_delay_ns = 25,
+    .input_delay_ns = 100,
     .cs_ena_pretrans = 2,
     .cs_ena_posttrans = 2,
   };
@@ -60,7 +60,7 @@ int32_t esp32_spi_write_read(struct no_os_spi_desc *desc, uint8_t *data, uint16_
     .rx_buffer = data
   };
 int tra = spi_device_polling_transmit(*handle, &transaction);
-ESP_LOGI(TAG, "%s",transaction);
+// ESP_LOGI(TAG, "%s",transaction);
 return  tra== ESP_OK ? 0 : -1;
 }
 

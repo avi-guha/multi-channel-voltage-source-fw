@@ -5,6 +5,14 @@
 #define AD7172_2_INIT
 #include "ad7172_2_regs.h"
 
+gpio_config_t cs_high = {
+  .pin_bit_mask  = (1ULL << CS_ADC) | (1ULL << CS_DAC0) | 
+    (1ULL << CS_DAC1) | (1ULL << CS_DAC2) | (1ULL << CS_DAC3),
+  .mode = GPIO_MODE_OUTPUT,
+  .pull_up_en = GPIO_PULLUP_ENABLE,
+  .pull_down_en = GPIO_PULLDOWN_DISABLE,
+  .intr_type = GPIO_INTR_DISABLE
+};
 
 esp32_spi_config_t spi_config = {
   .host = SPI3_HOST,

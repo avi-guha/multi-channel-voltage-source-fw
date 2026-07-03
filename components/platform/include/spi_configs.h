@@ -4,6 +4,7 @@
 #include "ad5761r.h"
 #include "no_os_spi.h"
 #include <driver/spi_master.h>
+#include <driver/gpio.h>
 
 #define NUM_CHANNELS 4
 
@@ -19,6 +20,7 @@ typedef struct {
 extern esp32_spi_config_t spi_config;
 extern struct no_os_spi_platform_ops platform_ops;
 
+extern gpio_config_t cs_high;
 
 /*
  * DAC SPI config
