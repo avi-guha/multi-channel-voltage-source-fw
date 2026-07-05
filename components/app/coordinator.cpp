@@ -18,8 +18,6 @@ Coordinator::Coordinator() {}
 
 void Coordinator::coordinator_task(void* arg){
     if(coordinator.init()){
-
-  ESP_LOGI(TAG, "hello");
       coordinator.run();
     }
     else{
@@ -76,10 +74,12 @@ bool Coordinator::init(){
     .clr_voltage = AD5761R_SCALE_ZERO,
     .int_ref_en = false,
     .exc_temp_sd_en = true,
+    .b2c_range_en = true,
     .ovr_en = false,
     .daisy_chain_en = false,
     // Ignore warnings since gpio are not used
   };
+
 
   for (int i = 0; i < NUM_CHANNELS; i++){
 
@@ -89,11 +89,16 @@ bool Coordinator::init(){
       return false;
     }
 
+    ad5761r_write_update_dac_register(dac_dev_[i], 0x0000);
+
     if (!channel_[i].init(i, adc_dev_, dac_dev_[i])){
       ESP_LOGE(TAG, "Channel %d failed to initialize", i);
       return false;
     }
   }  
+
+    ad5761r_write_update_dac_register(dac_dev_[0], 0x8000);
+    ad5761r_write_update_dac_register(dac_dev_[2], 0xC000);
 
   ESP_LOGI(TAG, "startup complete");
   return true;
@@ -104,8 +109,9 @@ void Coordinator::run(){
 
   while(true){ 
 
-    while(xQueueReceive(user_cmd_queue, &cmd, 0) == pdTRUE){
+    while(xQueueReceive(user_cmd_queue, &cmd, 1) == pdTRUE){
       channel_[cmd.channel_id].update(cmd);
+          ESP_LOGI(TAG, "Updating");
     }
 
     for(int i = 0; i < NUM_CHANNELS; i++){
@@ -116,10 +122,12 @@ void Coordinator::run(){
           break;
 
         case Mode::STEADY:
+          ESP_LOGI(TAG, "Enter Steady");
           channel_[i].steady_run();
           break;
 
         case Mode::SWEEP:
+          ESP_LOGI(TAG, "Enter Sweep");
           channel_[i].sweep_run();
           break;
       }
