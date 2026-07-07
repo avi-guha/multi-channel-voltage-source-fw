@@ -22,6 +22,7 @@ class Coordinator{
 
 
   private:
+    uint16_t vout_trans_function(float voltage);
     no_os_spi_desc *spi_desc_;
     ad717x_dev *adc_dev_;
     ad5761r_dev *dac_dev_[NUM_CHANNELS];

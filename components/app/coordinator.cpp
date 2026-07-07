@@ -1,4 +1,5 @@
 #include <esp_log.h>
+#include <math.h>
 #include "coordinator.hpp"
 #include "channel.hpp"
 #include "ad717x.h"
@@ -70,16 +71,18 @@ bool Coordinator::init(){
     .spi_init = *dac_config[0],
     .type = AD5761R,
     .out_range = AD5761R_RANGE_M_5V_TO_P_5V,
-    .pwr_voltage = AD5761R_SCALE_ZERO,
-    .clr_voltage = AD5761R_SCALE_ZERO,
-    .int_ref_en = false,
+    .pwr_voltage = AD5761R_SCALE_HALF,
+    .clr_voltage = AD5761R_SCALE_HALF,
+    .int_ref_en = true,
     .exc_temp_sd_en = true,
-    .b2c_range_en = true,
+    .b2c_range_en = false,
     .ovr_en = false,
-    .daisy_chain_en = false,
+    .daisy_chain_en = true,
     // Ignore warnings since gpio are not used
   };
 
+  uint16_t d0, d1,d2,d3;
+  uint16_t dummy;
 
   for (int i = 0; i < NUM_CHANNELS; i++){
 
@@ -89,7 +92,7 @@ bool Coordinator::init(){
       return false;
     }
 
-    ad5761r_write_update_dac_register(dac_dev_[i], 0x0000);
+    ad5761r_write_update_dac_register(dac_dev_[i], vout_trans_function(0.0f));
 
     if (!channel_[i].init(i, adc_dev_, dac_dev_[i])){
       ESP_LOGE(TAG, "Channel %d failed to initialize", i);
@@ -97,13 +100,28 @@ bool Coordinator::init(){
     }
   }  
 
-    ad5761r_write_update_dac_register(dac_dev_[0], 0x8000);
-    ad5761r_write_update_dac_register(dac_dev_[2], 0xC000);
-
+  ad5761r_write_update_dac_register(dac_dev_[0], vout_trans_function(-1.5));  
+  ad5761r_write_update_dac_register(dac_dev_[1], vout_trans_function(-1.0));  
+  ad5761r_write_update_dac_register(dac_dev_[3], vout_trans_function(-2.0));  
+  ad5761r_write_update_dac_register(dac_dev_[2], vout_trans_function(3.0));  
+     
+  ad5761r_read(dac_dev_[1],CMD_RD_CTRL_REG,&dummy);
+  ad5761r_read(dac_dev_[1],CMD_NOP,&d1);
+  ad5761r_read(dac_dev_[2],CMD_RD_CTRL_REG,&dummy);
+  ad5761r_read(dac_dev_[2],CMD_NOP,&d2);
+  ad5761r_read(dac_dev_[3],CMD_RD_CTRL_REG,&dummy);
+  ad5761r_read(dac_dev_[3],CMD_NOP,&d3);
+  ad5761r_read(dac_dev_[3],CMD_RD_INPUT_REG,&dummy);
+  ad5761r_read(dac_dev_[3],CMD_NOP,&d0);
+  ESP_LOGI(TAG, "1: %ld, 2: %ld, 3: %ld, %ld",d1,d2,d3, d0);
+  
   ESP_LOGI(TAG, "startup complete");
   return true;
 }
 
+uint16_t Coordinator::vout_trans_function(float voltage){
+  return (uint16_t)((voltage / 2.497 + 2.0) * 65535.0 / 4.0);
+}
 
 void Coordinator::run(){
 

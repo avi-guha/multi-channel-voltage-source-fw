@@ -59,7 +59,7 @@ void Channel::steady_run(){
 
   if(!steady_.initialized_){
     steady_.initialized_ = true;
-    ad5761r_write_update_dac_register(dac_dev_, steady_.voltage_);
+    ad5761r_write_update_dac_register(dac_dev_, voltage_to_bin(steady_.voltage_));
 
     if(steady_.timer_en_){
       steady_.finish_time_ = xTaskGetTickCount() + steady_.duration_in_ticks_; 
@@ -89,12 +89,12 @@ void Channel::steady_run(){
 
 void Channel::sweep_run(){
 
-  ad5761r_write_update_dac_register(dac_dev_, sweep_.voltage_);
+  ad5761r_write_update_dac_register(dac_dev_, voltage_to_bin(sweep_.voltage_));
   vTaskDelay(pdMS_TO_TICKS(2));
   
   AD717X_WaitForReady(adc_dev_, 2);
   AD717X_ReadData(adc_dev_, &voltage_read);
-  float current = static_cast<float>(voltage_read) / R_1K;
+  float current = (float)(voltage_read / R_1K);
 
   data = {
     .channel_id = channel_id,
@@ -182,6 +182,9 @@ void Channel::time_to_xtickcount(UserCmd& cmd){
 
 }
 
+uint16_t Channel::voltage_to_bin(float voltage){
+  return (uint16_t)((voltage + 5.0f) / 10.0f * 65535.0f);
+}
 
 void Channel::sweep_steps_config(UserCmd& cmd){
 

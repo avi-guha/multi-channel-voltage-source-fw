@@ -35,7 +35,7 @@ int32_t esp32_spi_init(struct no_os_spi_desc **desc, const struct no_os_spi_init
     .spics_io_num = -1, 
     .mode = param->mode,
     .queue_size = 1,
-    .input_delay_ns = 100,
+    .input_delay_ns = 50,
     .cs_ena_pretrans = 2,
     .cs_ena_posttrans = 2,
   };

@@ -11,5 +11,5 @@ extern "C" void app_main(void) {
 
   xTaskCreatePinnedToCore(log_task, "Log", 7000, NULL, 2, NULL, 0);
   xTaskCreatePinnedToCore(user_cmd_task, "Input", 7000, NULL, 2, NULL, 0);
-  xTaskCreatePinnedToCore(Coordinator::coordinator_task, "Coordinator", 7000, NULL, 2, NULL, 1);
+  xTaskCreatePinnedToCore(Coordinator::coordinator_task, "Coordinator", 10000, NULL, 2, NULL, 1);
 }

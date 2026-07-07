@@ -14,9 +14,14 @@
 #define CS_DAC3 4
 #define CS_ADC 21
 
+#define DAC_VREF 2.5
+#define D_16BIT 65535
+#define M_SLOPE 4
+#define C_OFFSET 2
+#define NUM_BITS 16
 
 const uint32_t DAC_FREQ = 8000000; //10MHz
-const uint32_t ADC_FREQ = 8000000;  //8MHz
+const uint32_t ADC_FREQ = 1000000;  //8MHz
 
 #endif
 

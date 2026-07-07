@@ -53,5 +53,6 @@ class Channel{
 
     void time_to_xtickcount(UserCmd& cmd); 
     void sweep_steps_config(UserCmd& cmd);
+    uint16_t voltage_to_bin(float voltage);
 
 };
