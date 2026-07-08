@@ -29,7 +29,7 @@ class Channel{
     struct SteadyParams{
       bool initialized_ = false;
       bool timer_en_ = false;
-      uint16_t voltage_ = 0;
+      float voltage_ = 0.0f;
       TickType_t duration_in_ticks_ = 0;
       TickType_t finish_time_ = 0;
     };
@@ -38,7 +38,7 @@ class Channel{
       SweepPhase phase_ = SweepPhase::FIRST;
       float range_in_mV_ = 0.0f;
       float step_size_ = 0.0f;
-      int32_t voltage_ = 0;
+      float voltage_ = 0.0f;
       uint32_t single_sweep_steps_ = 0;
       uint32_t total_steps_ = 0;
     };

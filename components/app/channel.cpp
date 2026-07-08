@@ -17,12 +17,14 @@ Channel::Channel()
 
 bool Channel::init(uint8_t id, ad717x_dev* adc_dev, ad5761r_dev* dac_dev){
     
-
   if (adc_dev == nullptr || dac_dev == nullptr) return false;
 
+    channel_id = id;
     adc_dev_ = adc_dev;
     dac_dev_ = dac_dev;
-    channel_id = id;
+
+    ad5761r_write_update_dac_register(dac_dev_, voltage_to_bin(0.0));
+
     return true;
 }
 
@@ -30,10 +32,11 @@ bool Channel::init(uint8_t id, ad717x_dev* adc_dev, ad5761r_dev* dac_dev){
 void Channel::update(UserCmd& cmd){
 
   switch (cmd.mode){
-
     case Mode::OFF:
       if (mode != Mode::OFF){
         stop();
+      }
+      else {
         mode = Mode::OFF;
       }
       break;
@@ -69,6 +72,7 @@ void Channel::steady_run(){
   AD717X_WaitForReady(adc_dev_, 2);
   AD717X_ReadData(adc_dev_, &voltage_read);
   float current = static_cast<float>(voltage_read) / R_1K;
+  ESP_LOGI(TAG, "voltage: %ld, current: %f", voltage_read, current);
   
   data = {
     .channel_id = channel_id,
@@ -185,6 +189,7 @@ void Channel::time_to_xtickcount(UserCmd& cmd){
 uint16_t Channel::voltage_to_bin(float voltage){
   return (uint16_t)((voltage / 2.497 + 2.0) * 65535.0 / 4.0);
 }
+
 void Channel::sweep_steps_config(UserCmd& cmd){
 
   sweep_.range_in_mV_ = cmd.param.Sweep.range_in_V * 1000; 

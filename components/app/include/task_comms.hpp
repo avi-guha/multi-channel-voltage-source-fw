@@ -34,7 +34,7 @@ struct UserCmd{
 struct DataLog{
   uint8_t channel_id;
   Mode mode;
-  int voltage;
+  float voltage;
   float current;
   uint32_t time;
 };

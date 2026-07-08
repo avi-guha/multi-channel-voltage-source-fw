@@ -6,3 +6,5 @@ idf_component_register(
            platform
            no_os
 )
+
+target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-missing-field-initializers)

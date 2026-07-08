@@ -1,11 +1,11 @@
 #include <esp_log.h>
+#include <driver/gpio.h>
 #include <math.h>
 #include "coordinator.hpp"
 #include "channel.hpp"
 #include "ad717x.h"
 #include "ad5761r.h"
 #include "spi_configs.h"
-#include "driver/gpio.h"
 #include "pin_config.h"
 
 static constexpr const char* TAG = "Coordinator";
@@ -60,7 +60,6 @@ bool Coordinator::init(){
     .mode = CONTINUOUS
   };
 
-  vTaskDelay(pdMS_TO_TICKS(100));
 
   if (AD717X_Init(&adc_dev_, adc_init_param) < 0){
     ESP_LOGE(TAG, "ADC init failed");
@@ -78,11 +77,8 @@ bool Coordinator::init(){
     .b2c_range_en = false,
     .ovr_en = false,
     .daisy_chain_en = true,
-    // Ignore warnings since gpio are not used
   };
 
-  uint16_t d0, d1,d2,d3;
-  uint16_t dummy;
 
   for (int i = 0; i < NUM_CHANNELS; i++){
 
@@ -91,7 +87,9 @@ bool Coordinator::init(){
       ESP_LOGE(TAG, "DAC %d failed to initialize", i);
       return false;
     }
-
+    
+    ad5761r_software_full_reset(dac_dev_[i]);
+    ad5761r_config(dac_dev_[i]);
     ad5761r_write_update_dac_register(dac_dev_[i], vout_trans_function(0.0f));
 
     if (!channel_[i].init(i, adc_dev_, dac_dev_[i])){
@@ -100,20 +98,24 @@ bool Coordinator::init(){
     }
   }  
 
-  ad5761r_write_update_dac_register(dac_dev_[0], vout_trans_function(4.0));  
-  ad5761r_write_update_dac_register(dac_dev_[1], vout_trans_function(-1.0));  
-  ad5761r_write_update_dac_register(dac_dev_[3], vout_trans_function(4.5));  
-  ad5761r_write_update_dac_register(dac_dev_[2], vout_trans_function(4.0));  
-     
-  ad5761r_read(dac_dev_[0],CMD_RD_CTRL_REG,&dummy);
-  ad5761r_read(dac_dev_[0],CMD_NOP,&d1);
-  ad5761r_read(dac_dev_[0],CMD_RD_INPUT_REG,&dummy);
-  ad5761r_read(dac_dev_[0],CMD_NOP,&d0);
-  ad5761r_read(dac_dev_[2],CMD_RD_CTRL_REG,&dummy);
-  ad5761r_read(dac_dev_[2],CMD_NOP,&d2);
-  ad5761r_read(dac_dev_[3],CMD_RD_CTRL_REG,&dummy);
-  ad5761r_read(dac_dev_[3],CMD_NOP,&d3);
-  ESP_LOGI(TAG, "0: %ld, %ld, 2: %ld, 3: %ld",d1,d0,d2,d3);
+  // uint16_t d0, d1,d2,d3;
+  // uint16_t dummy;
+  // vTaskDelay(pdMS_TO_TICKS(10));
+  // ad5761r_write_update_dac_register(dac_dev_[0], vout_trans_function(3.0));  
+  // ad5761r_write_update_dac_register(dac_dev_[1], vout_trans_function(-3.0));  
+  // ad5761r_write_update_dac_register(dac_dev_[2], vout_trans_function(3.0));  
+  // ad5761r_write_update_dac_register(dac_dev_[3], vout_trans_function(3.0));  
+  //    
+  // vTaskDelay(pdMS_TO_TICKS(10));
+  // ad5761r_read(dac_dev_[0],CMD_RD_CTRL_REG,&dummy);
+  // ad5761r_read(dac_dev_[0],CMD_NOP,&d0);
+  // ad5761r_read(dac_dev_[1],CMD_RD_CTRL_REG,&dummy);
+  // ad5761r_read(dac_dev_[1],CMD_NOP,&d1);
+  // ad5761r_read(dac_dev_[2],CMD_RD_CTRL_REG,&dummy);
+  // ad5761r_read(dac_dev_[2],CMD_NOP,&d2);
+  // ad5761r_read(dac_dev_[3],CMD_RD_CTRL_REG,&dummy);
+  // ad5761r_read(dac_dev_[3],CMD_NOP,&d3);
+  // ESP_LOGI(TAG, "0: %ld, 1: %ld, 2: %ld, 3: %ld",d0,d1,d2,d3);
   
   ESP_LOGI(TAG, "startup complete");
   return true;
