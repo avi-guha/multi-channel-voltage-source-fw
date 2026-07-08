@@ -100,27 +100,27 @@ bool Coordinator::init(){
     }
   }  
 
-  ad5761r_write_update_dac_register(dac_dev_[0], vout_trans_function(-1.5));  
+  ad5761r_write_update_dac_register(dac_dev_[0], vout_trans_function(4.0));  
   ad5761r_write_update_dac_register(dac_dev_[1], vout_trans_function(-1.0));  
-  ad5761r_write_update_dac_register(dac_dev_[3], vout_trans_function(-2.0));  
-  ad5761r_write_update_dac_register(dac_dev_[2], vout_trans_function(3.0));  
+  ad5761r_write_update_dac_register(dac_dev_[3], vout_trans_function(4.5));  
+  ad5761r_write_update_dac_register(dac_dev_[2], vout_trans_function(4.0));  
      
-  ad5761r_read(dac_dev_[1],CMD_RD_CTRL_REG,&dummy);
-  ad5761r_read(dac_dev_[1],CMD_NOP,&d1);
+  ad5761r_read(dac_dev_[0],CMD_RD_CTRL_REG,&dummy);
+  ad5761r_read(dac_dev_[0],CMD_NOP,&d1);
+  ad5761r_read(dac_dev_[0],CMD_RD_INPUT_REG,&dummy);
+  ad5761r_read(dac_dev_[0],CMD_NOP,&d0);
   ad5761r_read(dac_dev_[2],CMD_RD_CTRL_REG,&dummy);
   ad5761r_read(dac_dev_[2],CMD_NOP,&d2);
   ad5761r_read(dac_dev_[3],CMD_RD_CTRL_REG,&dummy);
   ad5761r_read(dac_dev_[3],CMD_NOP,&d3);
-  ad5761r_read(dac_dev_[3],CMD_RD_INPUT_REG,&dummy);
-  ad5761r_read(dac_dev_[3],CMD_NOP,&d0);
-  ESP_LOGI(TAG, "1: %ld, 2: %ld, 3: %ld, %ld",d1,d2,d3, d0);
+  ESP_LOGI(TAG, "0: %ld, %ld, 2: %ld, 3: %ld",d1,d0,d2,d3);
   
   ESP_LOGI(TAG, "startup complete");
   return true;
 }
 
 uint16_t Coordinator::vout_trans_function(float voltage){
-  return (uint16_t)((voltage / 2.497 + 2.0) * 65535.0 / 4.0);
+  return (uint16_t)((voltage / 2.5 + 2.0) * 65535.0 / 4.0);
 }
 
 void Coordinator::run(){

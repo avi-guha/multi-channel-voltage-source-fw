@@ -183,9 +183,8 @@ void Channel::time_to_xtickcount(UserCmd& cmd){
 }
 
 uint16_t Channel::voltage_to_bin(float voltage){
-  return (uint16_t)((voltage + 5.0f) / 10.0f * 65535.0f);
+  return (uint16_t)((voltage / 2.497 + 2.0) * 65535.0 / 4.0);
 }
-
 void Channel::sweep_steps_config(UserCmd& cmd){
 
   sweep_.range_in_mV_ = cmd.param.Sweep.range_in_V * 1000; 
