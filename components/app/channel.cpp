@@ -57,6 +57,7 @@ void Channel::update(UserCmd& cmd){
 void Channel::steady_run(){
 
   if(!steady_.initialized_){
+
     steady_.initialized_ = true;
     ad5761r_write_update_dac_register(dac_dev_, voltage_to_bin(steady_.voltage_));
 
@@ -64,26 +65,12 @@ void Channel::steady_run(){
       steady_.finish_time_ = xTaskGetTickCount() + steady_.duration_in_ticks_; 
     }
   }
-  
-  uint8_t ch_num = 0;
-  uint32_t raw = 0;
-  uint32_t adc_data = 0;
 
-  do {
-    AD717X_ReadData(adc_dev_, &voltage_read);
-    raw = (uint32_t) voltage_read;
-    adc_data = (raw >> 8) & 0xFFFFFF;
-    ch_num = raw & 0x0F;
-  } while(ch_num != channel_id);
-
-  float current_in_uA = bin_to_voltage(adc_data) / (R_1K * OPAMP_GAIN) * 100000;
-  ESP_LOGI(TAG, "Channel%d, voltage: %f V, current: %f uA", ch_num, bin_to_voltage(adc_data), current_in_uA);
-  
   data = {
     .channel_id = channel_id,
     .mode = mode,
     .voltage = steady_.voltage_,
-    .current = current_in_uA,
+    .current = get_current(),
     .time = pdTICKS_TO_MS(xTaskGetTickCount()),
   };
 
@@ -197,10 +184,26 @@ uint16_t Channel::voltage_to_bin(float voltage){
 
 
 float Channel::bin_to_voltage(uint32_t bin){
-  ESP_LOGI(TAG, "raw val: %ld", bin);
   return ADC_VREF * (static_cast<float>((static_cast<int32_t>(bin) - 0x800000)) * static_cast<float>(0x400000) / ADC_GAIN) / (0.75 * DECI_24BIT);
 }
 
+float Channel::get_current(){
+  uint32_t raw = 0;
+  uint32_t data = 0;
+  uint8_t ch_num = 0;
+
+  do {
+    AD717X_ReadData(adc_dev_, &voltage_read);
+    raw = (uint32_t) voltage_read;
+    data = (raw >> 8) & 0xFFFFFF;
+    ch_num = raw & 0x0F;
+  } while(ch_num != channel_id);
+
+  float current_in_uA = bin_to_voltage(data) / (R_1K * OPAMP_GAIN) * 1e6f;
+
+  ESP_LOGI(TAG, "Channel%d, Amplified voltage: %f V, Current: %f uA", ch_num, bin_to_voltage(data), current_in_uA);
+  return current_in_uA;
+}
 
 void Channel::sweep_steps_config(UserCmd& cmd){
 

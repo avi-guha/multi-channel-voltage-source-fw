@@ -60,5 +60,6 @@ class Channel{
     void sweep_steps_config(UserCmd& cmd);
     uint16_t voltage_to_bin(float voltage);
     float bin_to_voltage(uint32_t bin);
+    float get_current();
 
 };
