@@ -7,6 +7,11 @@ extern "C" {
 
 #include "task_comms.hpp"
 
+constexpr const float OPAMP_GAIN = 125.0f;
+constexpr const float ADC_VREF = 2.5;
+constexpr const float ADC_OFFSET = static_cast<float>(0x800000);
+constexpr const float ADC_GAIN = static_cast<float>(0x555555);
+constexpr const float DECI_24BIT = static_cast<float>(0x800000);
 constexpr const float R_1K = 1000;
 enum class SweepPhase { FIRST, SECOND, THIRD};
 
@@ -54,5 +59,6 @@ class Channel{
     void time_to_xtickcount(UserCmd& cmd); 
     void sweep_steps_config(UserCmd& cmd);
     uint16_t voltage_to_bin(float voltage);
+    float bin_to_voltage(uint32_t bin);
 
 };

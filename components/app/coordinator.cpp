@@ -31,7 +31,7 @@ void Coordinator::coordinator_task(void* arg){
 bool Coordinator::init(){
 
   gpio_config(&cs_high);
-  gpio_set_level(static_cast<gpio_num_t>(CS_ADC), 1);
+  gpio_set_level(static_cast<gpio_num_t>(CS_ADC) , 1);
   gpio_set_level(static_cast<gpio_num_t>(CS_DAC0), 1);
   gpio_set_level(static_cast<gpio_num_t>(CS_DAC1), 1);
   gpio_set_level(static_cast<gpio_num_t>(CS_DAC2), 1);
@@ -65,6 +65,13 @@ bool Coordinator::init(){
     ESP_LOGE(TAG, "ADC init failed");
     return false;
   }
+
+  ad717x_st_reg *ifmode = AD717X_GetReg(adc_dev_, AD717X_IFMODE_REG);
+  ifmode->value |= AD717X_IFMODE_REG_DATA_STAT;
+  if (AD717X_WriteRegister(adc_dev_, AD717X_IFMODE_REG) < 0) {
+    ESP_LOGE(TAG, "IFMODE write failed");
+    return false;
+  }
   
   ad5761r_init_param dac_init_param = {
     .spi_init = *dac_config[0],
@@ -88,9 +95,8 @@ bool Coordinator::init(){
       return false;
     }
     
-    ad5761r_software_full_reset(dac_dev_[i]);
+    ad5761r_software_full_reset(dac_dev_[i]); //Avoids edge case brownout triggering on boot
     ad5761r_config(dac_dev_[i]);
-    ad5761r_write_update_dac_register(dac_dev_[i], vout_trans_function(0.0f));
 
     if (!channel_[i].init(i, adc_dev_, dac_dev_[i])){
       ESP_LOGE(TAG, "Channel %d failed to initialize", i);
@@ -98,25 +104,6 @@ bool Coordinator::init(){
     }
   }  
 
-  // uint16_t d0, d1,d2,d3;
-  // uint16_t dummy;
-  // vTaskDelay(pdMS_TO_TICKS(10));
-  // ad5761r_write_update_dac_register(dac_dev_[0], vout_trans_function(3.0));  
-  // ad5761r_write_update_dac_register(dac_dev_[1], vout_trans_function(-3.0));  
-  // ad5761r_write_update_dac_register(dac_dev_[2], vout_trans_function(3.0));  
-  // ad5761r_write_update_dac_register(dac_dev_[3], vout_trans_function(3.0));  
-  //    
-  // vTaskDelay(pdMS_TO_TICKS(10));
-  // ad5761r_read(dac_dev_[0],CMD_RD_CTRL_REG,&dummy);
-  // ad5761r_read(dac_dev_[0],CMD_NOP,&d0);
-  // ad5761r_read(dac_dev_[1],CMD_RD_CTRL_REG,&dummy);
-  // ad5761r_read(dac_dev_[1],CMD_NOP,&d1);
-  // ad5761r_read(dac_dev_[2],CMD_RD_CTRL_REG,&dummy);
-  // ad5761r_read(dac_dev_[2],CMD_NOP,&d2);
-  // ad5761r_read(dac_dev_[3],CMD_RD_CTRL_REG,&dummy);
-  // ad5761r_read(dac_dev_[3],CMD_NOP,&d3);
-  // ESP_LOGI(TAG, "0: %ld, 1: %ld, 2: %ld, 3: %ld",d0,d1,d2,d3);
-  
   ESP_LOGI(TAG, "startup complete");
   return true;
 }
@@ -131,7 +118,6 @@ void Coordinator::run(){
 
     while(xQueueReceive(user_cmd_queue, &cmd, 1) == pdTRUE){
       channel_[cmd.channel_id].update(cmd);
-          ESP_LOGI(TAG, "Updating");
     }
 
     for(int i = 0; i < NUM_CHANNELS; i++){
@@ -142,12 +128,10 @@ void Coordinator::run(){
           break;
 
         case Mode::STEADY:
-          ESP_LOGI(TAG, "Enter Steady");
           channel_[i].steady_run();
           break;
 
         case Mode::SWEEP:
-          ESP_LOGI(TAG, "Enter Sweep");
           channel_[i].sweep_run();
           break;
       }

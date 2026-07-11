@@ -56,8 +56,14 @@ int32_t esp32_spi_write_read(struct no_os_spi_desc *desc, uint8_t *data, uint16_
 
   if (!desc || !data || len == 0) return -1;
 
-  gpio_set_level(desc->chip_select, 0);
   spi_device_handle_t *handle = (spi_device_handle_t *)desc->extra;
+
+  //This sets the correct SCLK idle level for different SPI mode devices (ADC: 3, DAC: 1)
+  uint8_t dummy;
+  spi_transaction_t nop = {.length = 8, .tx_buffer = &dummy, .rx_buffer = NULL};
+  spi_device_polling_transmit(*handle, &nop);
+
+  gpio_set_level(desc->chip_select, 0);
   spi_transaction_t transaction = {
     .length = 8 * len,
     .tx_buffer = data,

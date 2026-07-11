@@ -37,6 +37,7 @@
         alias fm='idf.py -p /dev/ttyUSB0 flash && idf.py monitor'
         alias f='idf.py -p /dev/ttyUSB0 flash'
         alias m='idf.py monitor'
+        alias bf='idf.py build && idf.py -p /dev/ttyUSB0 flash'
       '';
     };
   };

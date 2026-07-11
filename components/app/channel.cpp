@@ -33,12 +33,7 @@ void Channel::update(UserCmd& cmd){
 
   switch (cmd.mode){
     case Mode::OFF:
-      if (mode != Mode::OFF){
-        stop();
-      }
-      else {
-        mode = Mode::OFF;
-      }
+      if (mode != Mode::OFF) stop();
       break;
 
     case Mode::SWEEP:
@@ -50,10 +45,11 @@ void Channel::update(UserCmd& cmd){
       break;
 
     case Mode::STEADY:
-
       mode = Mode::STEADY;
       time_to_xtickcount(cmd);    
+      steady_.voltage_ = cmd.param.Steady.voltage;
       steady_.initialized_ = false;
+      break;
   }
 }
 
@@ -69,16 +65,25 @@ void Channel::steady_run(){
     }
   }
   
-  AD717X_WaitForReady(adc_dev_, 2);
-  AD717X_ReadData(adc_dev_, &voltage_read);
-  float current = static_cast<float>(voltage_read) / R_1K;
-  ESP_LOGI(TAG, "voltage: %ld, current: %f", voltage_read, current);
+  uint8_t ch_num = 0;
+  uint32_t raw = 0;
+  uint32_t adc_data = 0;
+
+  do {
+    AD717X_ReadData(adc_dev_, &voltage_read);
+    raw = (uint32_t) voltage_read;
+    adc_data = (raw >> 8) & 0xFFFFFF;
+    ch_num = raw & 0x0F;
+  } while(ch_num != channel_id);
+
+  float current_in_uA = bin_to_voltage(adc_data) / (R_1K * OPAMP_GAIN) * 100000;
+  ESP_LOGI(TAG, "Channel%d, voltage: %f V, current: %f uA", ch_num, bin_to_voltage(adc_data), current_in_uA);
   
   data = {
     .channel_id = channel_id,
     .mode = mode,
     .voltage = steady_.voltage_,
-    .current = current,
+    .current = current_in_uA,
     .time = pdTICKS_TO_MS(xTaskGetTickCount()),
   };
 
@@ -147,11 +152,10 @@ void Channel::sweep_run(){
 
 
 void Channel::stop(){
-
-  ad5761r_write_update_dac_register(dac_dev_, 0); 
+  ad5761r_write_update_dac_register(dac_dev_, voltage_to_bin(0.0f));
   done = true;
   mode = Mode::OFF;
-  ESP_LOGI(TAG,"Channel %d stopped, going back to standby mode.", channel_id);
+  ESP_LOGI(TAG,"Ch%d stopped, going back to standby.", channel_id);
 }
 
 
@@ -186,9 +190,17 @@ void Channel::time_to_xtickcount(UserCmd& cmd){
 
 }
 
+
 uint16_t Channel::voltage_to_bin(float voltage){
   return (uint16_t)((voltage / 2.497 + 2.0) * 65535.0 / 4.0);
 }
+
+
+float Channel::bin_to_voltage(uint32_t bin){
+  ESP_LOGI(TAG, "raw val: %ld", bin);
+  return ADC_VREF * (static_cast<float>((static_cast<int32_t>(bin) - 0x800000)) * static_cast<float>(0x400000) / ADC_GAIN) / (0.75 * DECI_24BIT);
+}
+
 
 void Channel::sweep_steps_config(UserCmd& cmd){
 
