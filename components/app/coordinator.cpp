@@ -66,6 +66,7 @@ bool Coordinator::init(){
     return false;
   }
 
+  //Appends 1byte statistics to ADC readout. Used to identify channel ID 
   ad717x_st_reg *ifmode = AD717X_GetReg(adc_dev_, AD717X_IFMODE_REG);
   ifmode->value |= AD717X_IFMODE_REG_DATA_STAT;
   if (AD717X_WriteRegister(adc_dev_, AD717X_IFMODE_REG) < 0) {
@@ -106,10 +107,6 @@ bool Coordinator::init(){
 
   ESP_LOGI(TAG, "startup complete");
   return true;
-}
-
-uint16_t Coordinator::vout_trans_function(float voltage){
-  return (uint16_t)((voltage / 2.5 + 2.0) * 65535.0 / 4.0);
 }
 
 void Coordinator::run(){

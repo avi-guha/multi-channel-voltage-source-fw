@@ -30,7 +30,6 @@ void user_cmd_task(void* arg){
       ESP_LOGI(TAG, "ch: %d", cmd.channel_id);
 
     token = strtok_r(nullptr, delimiter, &saveptr);
-    int ret = strcmp(token,"OFF");
     if (strcmp(token,"OFF") == 0){
       cmd.mode = Mode::OFF;
     }
