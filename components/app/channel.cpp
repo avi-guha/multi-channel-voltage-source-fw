@@ -22,7 +22,7 @@ bool Channel::init(uint8_t id, ad717x_dev* adc_dev, ad5761r_dev* dac_dev){
     adc_dev_ = adc_dev;
     dac_dev_ = dac_dev;
 
-    ad5761r_write_update_dac_register(dac_dev_, voltage_to_bin(0.0));
+    ad5761r_write_update_dac_register(dac_dev_, voltage_to_bin(0.0f));
 
     return true;
 }
@@ -176,7 +176,7 @@ float Channel::get_current(){
 
   float current_in_uA = bin_to_voltage(data) / (R_1K * OPAMP_GAIN) * 1e6f;
 
-  ESP_LOGI(TAG, "Channel%d, amplified voltage: %f V, current: %f uA", ch_num, bin_to_voltage(data), current_in_uA);
+  // ESP_LOGI(TAG, "Channel%d, amplified voltage: %f V, current: %f uA", ch_num, bin_to_voltage(data), current_in_uA);
   return current_in_uA;
 }
 
