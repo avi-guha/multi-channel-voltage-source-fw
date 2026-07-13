@@ -7,7 +7,7 @@ extern "C" {
 
 #include "task_comms.hpp"
 
-constexpr const float OPAMP_GAIN = 125.0f;
+constexpr const float OPAMP_GAIN = 125.6882793f; // G = 1 + 50k / 401 Ohm <- R_G
 constexpr const float ADC_VREF = 2.5;
 constexpr const float ADC_OFFSET = static_cast<float>(0x800000);
 constexpr const float ADC_GAIN = static_cast<float>(0x555555);
@@ -41,9 +41,9 @@ class Channel{
 
     struct SweepParams{
       SweepPhase phase_ = SweepPhase::FIRST;
-      float range_in_mV_ = 0.0f;
-      float step_size_ = 0.0f;
-      float voltage_ = 0.0f;
+      float range_in_V_ = 0.0f;
+      float step_size_V_ = 0.0f;
+      float voltage_in_V_ = 0.0f;
       uint32_t single_sweep_steps_ = 0;
       uint32_t total_steps_ = 0;
     };
@@ -54,12 +54,11 @@ class Channel{
     ad717x_dev* adc_dev_;
     ad5761r_dev* dac_dev_;
 
-    int32_t voltage_read;
+    int32_t adc_raw_data;
 
     void time_to_xtickcount(UserCmd& cmd); 
     void sweep_steps_config(UserCmd& cmd);
     uint16_t voltage_to_bin(float voltage);
     float bin_to_voltage(uint32_t bin);
     float get_current();
-
 };

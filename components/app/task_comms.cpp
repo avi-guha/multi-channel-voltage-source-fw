@@ -10,14 +10,11 @@ QueueHandle_t data_queue;
 QueueHandle_t user_cmd_queue;
 
 UserCmd cmd;
-DataLog data;
 
 
 void user_cmd_task(void* arg){
 
   char buffer[128];
-  char* token;
-  char* saveptr = nullptr;
   const char delimiter[] = ",";
 
   while(true){
@@ -26,35 +23,48 @@ void user_cmd_task(void* arg){
       vTaskDelay(pdMS_TO_TICKS(20));
       continue;
     }
-    cmd.channel_id = atoi(strtok_r(buffer, delimiter, &saveptr));
-      ESP_LOGI(TAG, "ch: %d", cmd.channel_id);
 
-    token = strtok_r(nullptr, delimiter, &saveptr);
-    if (strcmp(token,"OFF") == 0){
+    buffer[strcspn(buffer, "\r\n")] = '\0';
+    char* ch_token;
+    char* saveptr = nullptr;
+
+    ch_token = strtok_r(buffer, delimiter, &saveptr);
+    if (!ch_token) continue;
+    cmd.channel_id = atoi(ch_token);
+
+    char* mode_tok = strtok_r(nullptr, delimiter, &saveptr);
+    if (!mode_tok) continue;
+
+    if (strcmp(mode_tok,"OFF") == 0){
       cmd.mode = Mode::OFF;
     }
-    else if (strcmp(token,"STEADY") == 0){
+    else if (strcmp(mode_tok,"STEADY") == 0){
+
+      char* voltage_tok = strtok_r(nullptr, delimiter, &saveptr);
+      char* duration_tok = strtok_r(nullptr, delimiter, &saveptr);
+      if (!voltage_tok || !duration_tok) continue;
 
       cmd.mode = Mode::STEADY;  
-      cmd.param.Steady.voltage = atof(strtok_r(nullptr, delimiter, &saveptr));
-      cmd.param.Steady.duration = atof(strtok_r(nullptr, delimiter, &saveptr));
+      cmd.param.Steady.voltage = atof(voltage_tok);
+      cmd.param.Steady.duration = atof(duration_tok);
 
-      token = strtok_r(nullptr, delimiter, &saveptr);
-
-      if(strcmp(token, "Min") == 0){
+      char* time_tok = strtok_r(nullptr, delimiter, &saveptr);
+      if (!time_tok) continue;
+      
+      if(strcmp(time_tok, "Min") == 0){
         cmd.param.Steady.time_unit = TimeUnit::MIN;
       }
-      else if(strcmp(token, "Hour") == 0){
+      else if(strcmp(time_tok, "Hour") == 0){
         cmd.param.Steady.time_unit = TimeUnit::HOUR;
       }
-      else if(strcmp(token, "Day") == 0){
+      else if(strcmp(time_tok, "Day") == 0){
         cmd.param.Steady.time_unit = TimeUnit::DAY;
       }
-      else if(strcmp(token, "Month") == 0){
+      else if(strcmp(time_tok, "Month") == 0){
         cmd.param.Steady.time_unit = TimeUnit::MONTH;
       }
     }
-    else if (strcmp(token,"SWEEP") == 0){
+    else if (strcmp(mode_tok,"SWEEP") == 0){
 
       cmd.mode = Mode::SWEEP;  
       cmd.param.Sweep.range_in_V = atof(strtok_r(nullptr, delimiter, &saveptr));
@@ -67,15 +77,17 @@ void user_cmd_task(void* arg){
 
 
 void log_task (void* arg){
+
+  DataLog received_data;
   while(true){
-    if(xQueueReceive(data_queue, &data, portMAX_DELAY) == pdTRUE){
-      // printf("data, %d, %d, %.3f, %.3f, %lu \n", 
-      //     data.channel_id, 
-      //     (int)data.mode, 
-      //     data.voltage, 
-      //     data.current, 
-      //     (unsigned long)data.time
-      // );  
+    if(xQueueReceive(data_queue, &received_data, 1) == pdTRUE){
+      printf("data, %d, %d, %.3f, %.3f, %lu \n", 
+          received_data.channel_id, 
+          (int)received_data.mode, 
+          received_data.voltage, 
+          received_data.current, 
+          (unsigned long)received_data.time
+      );  
     }
   }
 }

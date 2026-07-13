@@ -66,7 +66,8 @@ bool Coordinator::init(){
     return false;
   }
 
-  //Appends 1byte statistics to ADC readout. Used to identify channel ID 
+  //Appends 1 byte statistics to ADC readout. 
+  //Used to identify channel ID for given adc data
   ad717x_st_reg *ifmode = AD717X_GetReg(adc_dev_, AD717X_IFMODE_REG);
   ifmode->value |= AD717X_IFMODE_REG_DATA_STAT;
   if (AD717X_WriteRegister(adc_dev_, AD717X_IFMODE_REG) < 0) {

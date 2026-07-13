@@ -5,9 +5,8 @@
 
 static constexpr const char* TAG = "Channel";
 
+DataLog data;
 extern UserCmd cmd;
-extern DataLog data;
-
 
 Channel::Channel()
   : channel_id(0),
@@ -41,7 +40,7 @@ void Channel::update(UserCmd& cmd){
       mode = Mode::SWEEP;
       sweep_.phase_ = SweepPhase::FIRST; 
       sweep_steps_config(cmd);
-      sweep_.voltage_ = 0;
+      sweep_.voltage_in_V_ = 0.0f;
       break;
 
     case Mode::STEADY:
@@ -66,11 +65,13 @@ void Channel::steady_run(){
     }
   }
 
+  float current = get_current();
+
   data = {
     .channel_id = channel_id,
     .mode = mode,
     .voltage = steady_.voltage_,
-    .current = get_current(),
+    .current = current,
     .time = pdTICKS_TO_MS(xTaskGetTickCount()),
   };
 
@@ -82,20 +83,16 @@ void Channel::steady_run(){
 }
 
 
-
 void Channel::sweep_run(){
 
-  ad5761r_write_update_dac_register(dac_dev_, voltage_to_bin(sweep_.voltage_));
-  vTaskDelay(pdMS_TO_TICKS(2));
-  
-  AD717X_WaitForReady(adc_dev_, 2);
-  AD717X_ReadData(adc_dev_, &voltage_read);
-  float current = (float)(voltage_read / R_1K);
+  ad5761r_write_update_dac_register(dac_dev_, voltage_to_bin(sweep_.voltage_in_V_));
+  vTaskDelay(pdMS_TO_TICKS(10));
+  float current = get_current();
 
   data = {
     .channel_id = channel_id,
     .mode = mode,
-    .voltage = sweep_.voltage_,
+    .voltage = sweep_.voltage_in_V_,
     .current = current,
     .time = pdTICKS_TO_MS(xTaskGetTickCount()),
   };
@@ -104,11 +101,10 @@ void Channel::sweep_run(){
 
   switch (sweep_.phase_){
 
-
     case SweepPhase::FIRST:
 
-      if (sweep_.voltage_ < sweep_.range_in_mV_){
-        sweep_.voltage_ += sweep_.step_size_;
+      if (sweep_.voltage_in_V_ < sweep_.range_in_V_){
+        sweep_.voltage_in_V_ += sweep_.step_size_V_;
       }
       else{
         sweep_.phase_ = SweepPhase::SECOND;
@@ -117,8 +113,8 @@ void Channel::sweep_run(){
 
     case SweepPhase::SECOND:
 
-      if (sweep_.voltage_ > - sweep_.range_in_mV_){
-        sweep_.voltage_ -= sweep_.step_size_;
+      if (sweep_.voltage_in_V_ > - sweep_.range_in_V_){
+        sweep_.voltage_in_V_ -= sweep_.step_size_V_;
       }
       else{
         sweep_.phase_ = SweepPhase::THIRD;
@@ -127,8 +123,8 @@ void Channel::sweep_run(){
 
     case SweepPhase::THIRD:
 
-      if (sweep_.voltage_ < 0){
-        sweep_.voltage_ += sweep_.step_size_;
+      if (sweep_.voltage_in_V_ < 0){
+        sweep_.voltage_in_V_ += sweep_.step_size_V_;
       }
       else{
         stop();
@@ -142,7 +138,55 @@ void Channel::stop(){
   ad5761r_write_update_dac_register(dac_dev_, voltage_to_bin(0.0f));
   done = true;
   mode = Mode::OFF;
+
+  data = {
+    .channel_id = channel_id,
+    .mode = mode,
+  };
+  xQueueSend(data_queue, &data, 0);
+
   ESP_LOGI(TAG,"Ch%d stopped, going back to standby.", channel_id);
+}
+
+
+uint16_t Channel::voltage_to_bin(float voltage){
+  return (uint16_t)((voltage / 2.497 + 2.0) * 65535.0 / 4.0);
+}
+
+
+float Channel::bin_to_voltage(uint32_t bin){
+  return ADC_VREF * (static_cast<float>((static_cast<int32_t>(bin) - 0x800000)) * static_cast<float>(0x400000) / ADC_GAIN) / (0.75 * DECI_24BIT);
+}
+
+
+float Channel::get_current(){
+
+  uint32_t raw = 0;
+  uint32_t data = 0;
+  uint8_t rdy = 1;
+  uint8_t ch_num = 0;
+
+  do {
+    AD717X_ReadData(adc_dev_, &adc_raw_data);
+    raw = (uint32_t) adc_raw_data;
+    data = (raw >> 8) & 0xFFFFFF;
+    rdy = (raw & 0x80) >> 7;
+    ch_num = raw & 0x0F;
+  } while (rdy == 1 || ch_num != channel_id); 
+
+  float current_in_uA = bin_to_voltage(data) / (R_1K * OPAMP_GAIN) * 1e6f;
+
+  ESP_LOGI(TAG, "Channel%d, amplified voltage: %f V, current: %f uA", ch_num, bin_to_voltage(data), current_in_uA);
+  return current_in_uA;
+}
+
+
+void Channel::sweep_steps_config(UserCmd& cmd){
+
+  sweep_.range_in_V_ = cmd.param.Sweep.range_in_V; 
+  sweep_.step_size_V_ = cmd.param.Sweep.step_size / 1000;
+
+  sweep_.single_sweep_steps_ = sweep_.range_in_V_ / sweep_.step_size_V_;
 }
 
 
@@ -174,42 +218,4 @@ void Channel::time_to_xtickcount(UserCmd& cmd){
       steady_.timer_en_ = false;
       break;
   }
-
 }
-
-
-uint16_t Channel::voltage_to_bin(float voltage){
-  return (uint16_t)((voltage / 2.497 + 2.0) * 65535.0 / 4.0);
-}
-
-
-float Channel::bin_to_voltage(uint32_t bin){
-  return ADC_VREF * (static_cast<float>((static_cast<int32_t>(bin) - 0x800000)) * static_cast<float>(0x400000) / ADC_GAIN) / (0.75 * DECI_24BIT);
-}
-
-float Channel::get_current(){
-  uint32_t raw = 0;
-  uint32_t data = 0;
-  uint8_t ch_num = 0;
-
-  do {
-    AD717X_ReadData(adc_dev_, &voltage_read);
-    raw = (uint32_t) voltage_read;
-    data = (raw >> 8) & 0xFFFFFF;
-    ch_num = raw & 0x0F;
-  } while(ch_num != channel_id);
-
-  float current_in_uA = bin_to_voltage(data) / (R_1K * OPAMP_GAIN) * 1e6f;
-
-  ESP_LOGI(TAG, "Channel%d, Amplified voltage: %f V, Current: %f uA", ch_num, bin_to_voltage(data), current_in_uA);
-  return current_in_uA;
-}
-
-void Channel::sweep_steps_config(UserCmd& cmd){
-
-  sweep_.range_in_mV_ = cmd.param.Sweep.range_in_V * 1000; 
-  sweep_.step_size_ = cmd.param.Sweep.step_size;
-
-  sweep_.single_sweep_steps_ = sweep_.range_in_mV_ / sweep_.step_size_;
-}
-
