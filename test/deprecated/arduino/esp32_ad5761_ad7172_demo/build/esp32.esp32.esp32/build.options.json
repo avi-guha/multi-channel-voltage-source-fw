@@ -1,9 +1,0 @@
-{
-  "additionalFiles": "../..,../..,../..,../..",
-  "compiler.optimization_flags": "-Os",
-  "customBuildProperties": "",
-  "fqbn": "esp32:esp32:esp32",
-  "hardwareFolders": "/private/tmp/arduino-cli-data/packages/esp32/hardware/esp32/3.3.8,/private/tmp/arduino-cli-data/packages/esp32/hardware/esp32/3.3.8",
-  "otherLibrariesFolders": "/tmp/arduino-cli-user/libraries",
-  "sketchLocation": "/Users/avi/Documents/work/quantum-silicon-photonics/multi-channel-voltage-source-fw/arduino/esp32_ad5761_ad7172_demo"
-}

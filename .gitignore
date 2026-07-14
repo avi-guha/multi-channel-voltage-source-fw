@@ -3,5 +3,5 @@
 .DS_Store
 codex.md
 sdkconfig.old
-sdk.config
+sdkconfig
 test/*
