@@ -8,6 +8,7 @@ static constexpr const char* TAG = "Channel";
 DataLog data;
 extern UserCmd cmd;
 
+
 Channel::Channel()
   : channel_id(0),
     mode(Mode::OFF),
@@ -54,6 +55,7 @@ void Channel::update(UserCmd& cmd){
 
 
 void Channel::steady_run(){
+
 
   if(!steady_.initialized_){
 
@@ -135,6 +137,7 @@ void Channel::sweep_run(){
 
 
 void Channel::stop(){
+
   ad5761r_write_update_dac_register(dac_dev_, voltage_to_bin(0.0f));
   done = true;
   mode = Mode::OFF;

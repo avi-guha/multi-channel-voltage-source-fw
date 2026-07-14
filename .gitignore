@@ -2,3 +2,6 @@
 .clangd
 .DS_Store
 codex.md
+sdkconfig.old
+sdk.config
+test/*

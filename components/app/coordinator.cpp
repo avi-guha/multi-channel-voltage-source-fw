@@ -1,12 +1,12 @@
 #include <esp_log.h>
-#include <driver/gpio.h>
-#include <math.h>
+#include <esp_err.h>
+#include <esp_task_wdt.h>
 #include "coordinator.hpp"
 #include "channel.hpp"
 #include "ad717x.h"
 #include "ad5761r.h"
-#include "spi_configs.h"
 #include "pin_config.h"
+#include "spi_configs.h"
 
 static constexpr const char* TAG = "Coordinator";
 
@@ -18,13 +18,16 @@ Coordinator::Coordinator() {}
 
 
 void Coordinator::coordinator_task(void* arg){
-    if(coordinator.init()){
-      coordinator.run();
-    }
-    else{
-      ESP_LOGE(TAG,"Failed to start");
-      vTaskDelete(nullptr);
-    }
+
+  if(coordinator.init()){
+    ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
+    ESP_ERROR_CHECK(esp_task_wdt_status(NULL));
+    coordinator.run();
+  }
+  else{
+    ESP_LOGE(TAG,"Failed to start");
+    vTaskDelete(nullptr);
+  }
 }
 
 
@@ -134,6 +137,8 @@ void Coordinator::run(){
           break;
       }
     }
+
+    esp_task_wdt_reset();
   }
 }
 
