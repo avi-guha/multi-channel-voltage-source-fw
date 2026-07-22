@@ -101,9 +101,6 @@ class Channel{
     /** @brief Convert cmd's duration+time_unit into FreeRTOS ticks; set steady_.timer_en_. */
     void time_to_us(UserCmd& cmd);
 
-    /** @brief Copy sweep params from cmd and compute step count; converts step from mV → V. */
-    void sweep_steps_config(UserCmd& cmd);
-
     /**
      * @brief Convert a voltage (V, ±5V range) to an AD5761R 16-bit code.
      * @param voltage Desired DAC output in volts.

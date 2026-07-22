@@ -46,7 +46,9 @@ void Channel::update(UserCmd& cmd){
 
       mode = Mode::SWEEP;
       sweep_.phase_ = SweepPhase::FIRST; 
-      sweep_steps_config(cmd);
+      sweep_.range_in_V_ = cmd.param.Sweep.range_in_V; 
+      sweep_.step_size_V_ = cmd.param.Sweep.step_size / 1000;
+      sweep_.single_sweep_steps_ = sweep_.range_in_V_ / sweep_.step_size_V_;
       sweep_.voltage_in_V_ = 0.0f;
       break;
 
@@ -74,7 +76,7 @@ void Channel::steady_run(){
     
   }
 
-  vTaskDelay(pdMS_TO_TICKS(60));
+  vTaskDelay(pdMS_TO_TICKS(10));
   float current = get_current();
 
   data = {
@@ -96,7 +98,7 @@ void Channel::steady_run(){
 void Channel::sweep_run(){
 
   ad5761r_write_update_dac_register(dac_dev_, voltage_to_bin(sweep_.voltage_in_V_));
-  vTaskDelay(pdMS_TO_TICKS(60));
+  vTaskDelay(pdMS_TO_TICKS(10));
   float current = get_current();
 
   data = {
@@ -190,15 +192,6 @@ float Channel::get_current(){
 
   // ESP_LOGI(TAG, "Channel%d, amplified voltage: %f V, current: %f uA", ch_num, bin_to_voltage(data), current_in_uA);
   return current_in_uA;
-}
-
-
-void Channel::sweep_steps_config(UserCmd& cmd){
-
-  sweep_.range_in_V_ = cmd.param.Sweep.range_in_V; 
-  sweep_.step_size_V_ = cmd.param.Sweep.step_size / 1000;
-
-  sweep_.single_sweep_steps_ = sweep_.range_in_V_ / sweep_.step_size_V_;
 }
 
 
