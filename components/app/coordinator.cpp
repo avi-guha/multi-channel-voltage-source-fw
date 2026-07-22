@@ -1,3 +1,8 @@
+/**
+ * @file coordinator.cpp
+ * @brief Implementation of the top-level coordinator (hardware init + run loop).
+ */
+
 #include <esp_log.h>
 #include <esp_err.h>
 #include <esp_task_wdt.h>
@@ -47,37 +52,6 @@ bool Coordinator::init(){
     return false;
   }
 
-
-  ad717x_init_param adc_init_param = {
-    .spi_init = adc_config,
-    .regs = ad7172_2_regs, 
-    .num_regs = ad7172_2_num_regs,
-    .active_device = ID_AD7172_2,
-    .ref_en = true,
-    .num_channels = NUM_CHANNELS,
-    .num_setups = NUM_CHANNELS,
-    .chan_map = {chan_map[0], chan_map[1], chan_map[2], chan_map[3]},
-    .setups = {setup[0], setup[1], setup[2], setup[3]},
-    .pga = {pga[0], pga[1], pga[2], pga[3]},
-    .filter_configuration = {filtcon[0], filtcon[1], filtcon[2], filtcon[3]},
-    .mode = CONTINUOUS
-  };
-
-
-  if (AD717X_Init(&adc_dev_, adc_init_param) < 0){
-    ESP_LOGE(TAG, "ADC init failed");
-    return false;
-  }
-
-  //Appends 1 byte statistics to ADC readout. 
-  //Used to identify channel ID for given adc data
-  ad717x_st_reg *ifmode = AD717X_GetReg(adc_dev_, AD717X_IFMODE_REG);
-  ifmode->value |= AD717X_IFMODE_REG_DATA_STAT;
-  if (AD717X_WriteRegister(adc_dev_, AD717X_IFMODE_REG) < 0) {
-    ESP_LOGE(TAG, "IFMODE write failed");
-    return false;
-  }
-  
   ad5761r_init_param dac_init_param = {
     .spi_init = *dac_config[0],
     .type = AD5761R,
@@ -91,6 +65,24 @@ bool Coordinator::init(){
     .daisy_chain_en = true,
   };
 
+  ad717x_init_param adc_init_param = {
+    .spi_init = adc_config,
+    .regs = ad7172_2_regs, 
+    .num_regs = ad7172_2_num_regs,
+    .active_device = ID_AD7172_2,
+    .ref_en = true,
+    .num_channels = NUM_CHANNELS,
+    .num_setups = NUM_CHANNELS,
+    .chan_map = {chan_map[0], chan_map[1], chan_map[2], chan_map[3]},
+    .setups = {setup[0], setup[1], setup[2], setup[3]},
+    .filter_configuration = {filtcon[0], filtcon[1], filtcon[2], filtcon[3]},
+    .mode = INTERNAL_OFFSET_CALIB
+  };
+
+  if (AD717X_Init(&adc_dev_, adc_init_param) < 0){
+    ESP_LOGE(TAG, "ADC init failed");
+    return false;
+  }
 
   for (int i = 0; i < NUM_CHANNELS; i++){
 
@@ -109,6 +101,43 @@ bool Coordinator::init(){
     }
   }  
 
+  //Appends 1 byte statistics to ADC readout. 
+  //Used to identify channel ID for given adc data
+  ad717x_st_reg *ifmode = AD717X_GetReg(adc_dev_, AD717X_IFMODE_REG);
+  ifmode->value |= AD717X_IFMODE_REG_DATA_STAT;
+  if (AD717X_WriteRegister(adc_dev_, AD717X_IFMODE_REG) < 0) {
+    ESP_LOGE(TAG, "IFMODE write failed");
+    return false;
+  }
+
+  vTaskDelay(pdMS_TO_TICKS(50));
+
+  AD717X_WaitForReady(adc_dev_, AD717X_CONV_TIMEOUT);
+  ad717x_st_reg *adcmode = AD717X_GetReg(adc_dev_, AD717X_ADCMODE_REG);
+  adcmode->value &= ~AD717X_ADCMODE_REG_MODE_MSK;
+  adcmode->value |= AD717X_ADCMODE_REG_MODE(INTERNAL_GAIN_CALIB);
+  if (AD717X_WriteRegister(adc_dev_, AD717X_ADCMODE_REG) < 0) {
+    ESP_LOGE(TAG, "ADC Internal gain calibration failed");
+    return false;
+  }
+
+  AD717X_WaitForReady(adc_dev_, AD717X_CONV_TIMEOUT);
+  adcmode->value &= ~AD717X_ADCMODE_REG_MODE_MSK;
+  adcmode->value |= AD717X_ADCMODE_REG_MODE(SYS_OFFSET_CALIB);
+  if (AD717X_WriteRegister(adc_dev_, AD717X_ADCMODE_REG) < 0) {
+    ESP_LOGE(TAG, "ADC System offset calibration failed");
+    return false;
+  }
+
+  AD717X_WaitForReady(adc_dev_, AD717X_CONV_TIMEOUT);
+  adcmode->value &= ~AD717X_ADCMODE_REG_MODE_MSK;
+  adcmode->value |= AD717X_ADCMODE_REG_MODE(CONTINUOUS);
+  if (AD717X_WriteRegister(adc_dev_, AD717X_ADCMODE_REG) < 0) {
+    ESP_LOGE(TAG, "Continuous mode transition failed");
+    return false;
+  }
+
+  vTaskDelay(pdMS_TO_TICKS(60));
   ESP_LOGI(TAG, "startup complete");
   return true;
 }

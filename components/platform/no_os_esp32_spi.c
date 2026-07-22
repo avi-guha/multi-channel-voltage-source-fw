@@ -1,3 +1,8 @@
+/**
+ * @file no_os_esp32_spi.c
+ * @brief Implementation of the no_os_spi platform_ops backed by ESP-IDF SPI master.
+ */
+
 #include <esp_log.h>
 #include <esp_err.h>
 #include <driver/gpio.h>

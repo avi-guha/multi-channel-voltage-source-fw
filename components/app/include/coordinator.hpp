@@ -1,3 +1,13 @@
+/**
+ * @file coordinator.hpp
+ * @brief Top-level orchestrator: owns hardware handles, dispatches user commands,
+ *        and drives per-channel state machines on the coordinator task.
+ * @details Init sequence brings up the shared SPI bus, the ADC (with status-byte
+ *          appended to data reads), and every DAC. The run loop drains
+ *          user_cmd_queue into the target Channel, then iterates all channels
+ *          to run one step of their current mode. Watchdog is reset each pass.
+ */
+
 #pragma once
 
 extern "C" {
@@ -9,15 +19,32 @@ extern "C" {
 #include "channel.hpp"
 
 
+/** @brief Number of independent output channels supported by this build. */
 static constexpr uint8_t NUM_CHANNELS = 4;
 
+/**
+ * @brief Owns hardware handles and the Channel array; runs the control loop.
+ */
 class Coordinator{
 
   public:
     Coordinator();
-    
+
+    /**
+     * @brief FreeRTOS task entry: init hardware, register with task WDT, run loop.
+     * @param arg Unused; required by FreeRTOS task signature.
+     */
     static void coordinator_task(void* arg);
+
+    /**
+     * @brief Bring up SPI bus, ADC, DACs, and each Channel.
+     * @return true on success; false on any peripheral init failure.
+     */
     bool init();
+
+    /**
+     * @brief Main control loop: dispatch commands and step every channel.
+     */
     void run();
 
 

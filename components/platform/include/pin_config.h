@@ -1,3 +1,11 @@
+/**
+ * @file pin_config.h
+ * @brief Board pin assignments and SPI clock rates for the ESP32 ↔ AD5761R/AD7172-2 wiring.
+ * @details Chip-selects are driven as regular GPIOs (not native SPI CS) because
+ *          the ESP32 SPI peripheral supports only 3 hardware CS lines and this
+ *          board has 5 devices on one bus (4 DACs + 1 ADC).
+ */
+
 #ifndef __PIN_CONFIG_H__
 #define __PIN_CONFIG_H__
 

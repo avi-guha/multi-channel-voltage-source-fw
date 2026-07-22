@@ -1,9 +1,13 @@
+/**
+ * @file task_comms.cpp
+ * @brief Implementation of the serial-input parser and CSV-out logger tasks.
+ */
+
 #include <stdio.h>
 #include <cstring>
 #include <esp_log.h>
 #include "task_comms.hpp"
 
-static constexpr const char* TAG = "comms";
 
 QueueHandle_t event_queue;
 QueueHandle_t data_queue;
@@ -81,7 +85,7 @@ void log_task (void* arg){
   DataLog received_data;
   while(true){
     if(xQueueReceive(data_queue, &received_data, 1) == pdTRUE){
-      printf("data, %d, %d, %.3f, %.3f, %lu \n", 
+      printf("data, %d, %d, %.3f, %.5f, %lu \n", 
           received_data.channel_id, 
           (int)received_data.mode, 
           received_data.voltage, 

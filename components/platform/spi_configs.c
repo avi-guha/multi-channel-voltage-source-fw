@@ -1,3 +1,8 @@
+/**
+ * @file spi_configs.c
+ * @brief Definitions of SPI configs, AD7172-2 channel/setup/filter tables, and DAC configs.
+ */
+
 #include "spi_configs.h"
 #include "pin_config.h"
 #include "no_os_esp32_spi.h"
@@ -140,7 +145,7 @@ struct ad717x_channel_map chan_map[NUM_CHANNELS] = {
   }, 
   [1] = {
     .channel_enable = true,
-    .setup_sel = 0,
+    .setup_sel = 1,
     .analog_inputs = {
       .ainp = {
         .pos_analog_input = AIN1,
@@ -150,7 +155,7 @@ struct ad717x_channel_map chan_map[NUM_CHANNELS] = {
   }, 
   [2] = {
     .channel_enable = true,
-    .setup_sel = 0,
+    .setup_sel = 2,
     .analog_inputs = {
       .ainp = {
         .pos_analog_input = AIN2,
@@ -160,7 +165,7 @@ struct ad717x_channel_map chan_map[NUM_CHANNELS] = {
   }, 
   [3] = {
     .channel_enable = true,
-    .setup_sel = 0,
+    .setup_sel = 3,
     .analog_inputs = {
       .ainp = {
         .pos_analog_input = AIN3,
@@ -199,33 +204,30 @@ struct ad717x_channel_setup setup[NUM_CHANNELS] = {
 };
 
 
-uint32_t pga[NUM_CHANNELS] = {[0] = 100, [1] = 100, [2] = 100, [3] = 100};
-
-
 struct ad717x_filtcon filtcon[NUM_CHANNELS] = {
   [0] = {
     .sinc3_map = false,
-    .enhfilten = false,
+    .enhfilten = true,
     .oder = sinc5_sinc1,
-    .odr = sps_1007
+    .odr = sps_5
   },
   [1] = {
     .sinc3_map = false,
-    .enhfilten = false,
+    .enhfilten = true,
     .oder = sinc5_sinc1,
-    .odr = sps_1007
+    .odr = sps_5
   },
   [2] = {
     .sinc3_map = false,
-    .enhfilten = false,
+    .enhfilten = true,
     .oder = sinc5_sinc1,
-    .odr = sps_1007
+    .odr = sps_5
   },
   [3] = {
     .sinc3_map = false,
-    .enhfilten = false,
+    .enhfilten = true,
     .oder = sinc5_sinc1,
-    .odr = sps_1007
+    .odr = sps_5
   }
 };
 

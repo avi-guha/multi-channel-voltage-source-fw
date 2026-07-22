@@ -1,3 +1,11 @@
+/**
+ * @file spi_configs.h
+ * @brief Externs for the per-device SPI configs and AD7172-2 register tables.
+ * @details All definitions live in spi_configs.c; this header just exposes them
+ *          so coordinator.cpp can hand them to the AD5761R / AD717x init routines.
+ *          DACs use SPI mode 1; the ADC uses SPI mode 3.
+ */
+
 #pragma once
 
 #include "ad717x.h"

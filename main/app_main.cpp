@@ -1,3 +1,13 @@
+/**
+ * @file app_main.cpp
+ * @brief ESP-IDF application entry point.
+ * @details Creates the inter-task queues and spawns the three FreeRTOS
+ *          tasks that make up the firmware: serial I/O input, data-log
+ *          output, and the coordinator that drives the DAC/ADC state
+ *          machines. I/O tasks are pinned to core 0; the coordinator
+ *          owns core 1 to keep control-loop timing off the USB path.
+ */
+
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include "coordinator.hpp"

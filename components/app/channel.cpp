@@ -1,4 +1,10 @@
+/**
+ * @file channel.cpp
+ * @brief Implementation of the Channel state machine (DAC set + ADC readback).
+ */
+
 #include <esp_log.h>
+#include <esp_timer.h>
 #include "channel.hpp"
 #include "task_comms.hpp"
 
@@ -46,7 +52,7 @@ void Channel::update(UserCmd& cmd){
 
     case Mode::STEADY:
       mode = Mode::STEADY;
-      time_to_xtickcount(cmd);    
+      time_to_us(cmd);    
       steady_.voltage_ = cmd.param.Steady.voltage;
       steady_.initialized_ = false;
       break;
@@ -63,10 +69,12 @@ void Channel::steady_run(){
     ad5761r_write_update_dac_register(dac_dev_, voltage_to_bin(steady_.voltage_));
 
     if(steady_.timer_en_){
-      steady_.finish_time_ = xTaskGetTickCount() + steady_.duration_in_ticks_; 
+      steady_.finish_time_ = esp_timer_get_time() + steady_.duration_us_; 
     }
+    
   }
 
+  vTaskDelay(pdMS_TO_TICKS(60));
   float current = get_current();
 
   data = {
@@ -74,12 +82,12 @@ void Channel::steady_run(){
     .mode = mode,
     .voltage = steady_.voltage_,
     .current = current,
-    .time = pdTICKS_TO_MS(xTaskGetTickCount()),
+    .time = esp_timer_get_time() / 1e6f,
   };
 
   xQueueSend(data_queue, &data, 0);
 
-  if (xTaskGetTickCount() > steady_.finish_time_){
+  if (esp_timer_get_time() > steady_.finish_time_){
     stop();
   } 
 }
@@ -88,7 +96,7 @@ void Channel::steady_run(){
 void Channel::sweep_run(){
 
   ad5761r_write_update_dac_register(dac_dev_, voltage_to_bin(sweep_.voltage_in_V_));
-  vTaskDelay(pdMS_TO_TICKS(10));
+  vTaskDelay(pdMS_TO_TICKS(60));
   float current = get_current();
 
   data = {
@@ -96,10 +104,10 @@ void Channel::sweep_run(){
     .mode = mode,
     .voltage = sweep_.voltage_in_V_,
     .current = current,
-    .time = pdTICKS_TO_MS(xTaskGetTickCount()),
+    .time = esp_timer_get_time() / 1e6f,
   };
 
-    xQueueSend(data_queue, &data, 0);
+  xQueueSend(data_queue, &data, 0);
 
   switch (sweep_.phase_){
 
@@ -153,12 +161,13 @@ void Channel::stop(){
 
 
 uint16_t Channel::voltage_to_bin(float voltage){
-  return (uint16_t)((voltage / 2.497 + 2.0) * 65535.0 / 4.0);
+  return (uint16_t)((voltage / 2.49041 + 2.0) * 65535.0 / 4.0);
 }
 
 
 float Channel::bin_to_voltage(uint32_t bin){
-  return ADC_VREF * (static_cast<float>((static_cast<int32_t>(bin) - 0x800000)) * static_cast<float>(0x400000) / ADC_GAIN) / (0.75 * DECI_24BIT);
+  return ADC_VREF * (static_cast<float>((static_cast<int32_t>(bin) - 0x800000)) 
+      * static_cast<float>(0x400000) / ADC_GAIN) / (0.75 * DECI_24BIT);
 }
 
 
@@ -193,27 +202,27 @@ void Channel::sweep_steps_config(UserCmd& cmd){
 }
 
 
-void Channel::time_to_xtickcount(UserCmd& cmd){
+void Channel::time_to_us(UserCmd& cmd){
 
   switch(cmd.param.Steady.time_unit){
 
     case TimeUnit::MIN:
-      steady_.duration_in_ticks_ = pdMS_TO_TICKS(cmd.param.Steady.duration * 60000);
+      steady_.duration_us_ = (int64_t)((double)cmd.param.Steady.duration * 60.0 * 1e6f);
       steady_.timer_en_ = true;
       break;
 
     case TimeUnit::HOUR:
-      steady_.duration_in_ticks_ = pdMS_TO_TICKS(cmd.param.Steady.duration * 360000);
+      steady_.duration_us_ = (int64_t)((double)cmd.param.Steady.duration * 3600.0 * 1e6f);
       steady_.timer_en_ = true;
       break;
 
     case TimeUnit::DAY:
-      steady_.duration_in_ticks_ = pdMS_TO_TICKS(cmd.param.Steady.duration * 360000 * 24);
+      steady_.duration_us_ = (int64_t)((double)cmd.param.Steady.duration * 86400.0 * 1e6f);
       steady_.timer_en_ = true;
       break;
 
     case TimeUnit::MONTH:
-      steady_.duration_in_ticks_ = pdMS_TO_TICKS(cmd.param.Steady.duration * 360000 * 24 * 31);
+      steady_.duration_us_ = (int64_t)((double)cmd.param.Steady.duration * 2678400.0 * 1e6f);
       steady_.timer_en_ = true;
       break;
 
