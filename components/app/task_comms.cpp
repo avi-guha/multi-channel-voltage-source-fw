@@ -40,7 +40,26 @@ void user_cmd_task(void* arg){
     if (!mode_tok) continue;
 
     if (strcmp(mode_tok,"OFF") == 0){
-      cmd.mode = Mode::OFF;
+      cmd.mode = Mode::IDLE;
+      cmd.param.Cal.cal_en = false;
+      
+      char* str_tok = strtok_r(nullptr, delimiter, &saveptr);
+      if (!str_tok) continue;
+
+      if (strcmp(str_tok, "CALIBRATION") == 0){
+        cmd.param.Cal.cal_en = true;
+
+        char* r1k_tok = strtok_r(nullptr, delimiter, &saveptr);
+        char* rgain_tok = strtok_r(nullptr, delimiter, &saveptr);
+        if (!r1k_tok || !rgain_tok) continue;
+        cmd.param.Cal.R_1k = atof(r1k_tok);
+        cmd.param.Cal.R_gain = atof(rgain_tok);
+      }
+      else if (strcmp(str_tok, "SPS") == 0){
+        char* sps_tok = strtok_r(nullptr, delimiter, &saveptr);
+        if (!sps_tok) continue;
+        cmd.param.sps_setting = atoi(sps_tok);
+      }
     }
     else if (strcmp(mode_tok,"STEADY") == 0){
 

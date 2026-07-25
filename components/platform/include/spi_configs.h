@@ -59,7 +59,5 @@ extern struct ad717x_channel_map chan_map[NUM_CHANNELS];
 
 extern struct ad717x_channel_setup setup[NUM_CHANNELS];
 
-extern uint32_t pga[NUM_CHANNELS];
-
 extern struct ad717x_filtcon filtcon[NUM_CHANNELS];
 

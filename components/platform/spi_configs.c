@@ -129,13 +129,14 @@ struct no_os_spi_init_param adc_config = {
   .extra = &spi_config
 };
 
+
 const uint8_t ad7172_2_num_regs = sizeof(ad7172_2_regs) / sizeof(ad7172_2_regs[0]);
 
 
 struct ad717x_channel_map chan_map[NUM_CHANNELS] = {
   [0] = {
     .channel_enable = true,
-    .setup_sel = 0,
+    .setup_sel = 1,
     .analog_inputs = {
       .ainp = {
         .pos_analog_input = AIN0,
@@ -155,7 +156,7 @@ struct ad717x_channel_map chan_map[NUM_CHANNELS] = {
   }, 
   [2] = {
     .channel_enable = true,
-    .setup_sel = 2,
+    .setup_sel = 1,
     .analog_inputs = {
       .ainp = {
         .pos_analog_input = AIN2,
@@ -165,7 +166,7 @@ struct ad717x_channel_map chan_map[NUM_CHANNELS] = {
   }, 
   [3] = {
     .channel_enable = true,
-    .setup_sel = 3,
+    .setup_sel = 1,
     .analog_inputs = {
       .ainp = {
         .pos_analog_input = AIN3,
@@ -177,58 +178,18 @@ struct ad717x_channel_map chan_map[NUM_CHANNELS] = {
 
 
 struct ad717x_channel_setup setup[NUM_CHANNELS] = {
-  [0] = {
-    .bi_unipolar = true,
-    .ref_buff = false,
-    .input_buff = false,
-    .ref_source = INTERNAL_REF
-  },
-  [1] = {
-    .bi_unipolar = true,
-    .ref_buff = false,
-    .input_buff = false,
-    .ref_source = INTERNAL_REF
-  },
-  [2] = {
-    .bi_unipolar = true,
-    .ref_buff = false,
-    .input_buff = false,
-    .ref_source = INTERNAL_REF
-  },
-  [3] = {
-    .bi_unipolar = true,
-    .ref_buff = false,
-    .input_buff = false,
-    .ref_source = INTERNAL_REF
-  }
+  [0] = {.bi_unipolar = true, .ref_buff = false, .input_buff = false, .ref_source = INTERNAL_REF},
+  [1] = {.bi_unipolar = true, .ref_buff = false, .input_buff = false, .ref_source = INTERNAL_REF},
+  [2] = {.bi_unipolar = true, .ref_buff = false, .input_buff = false, .ref_source = INTERNAL_REF},
+  [3] = {.bi_unipolar = true, .ref_buff = false, .input_buff = false, .ref_source = INTERNAL_REF},
 };
 
 
 struct ad717x_filtcon filtcon[NUM_CHANNELS] = {
-  [0] = {
-    .sinc3_map = false,
-    .enhfilten = true,
-    .oder = sinc5_sinc1,
-    .odr = sps_5
-  },
-  [1] = {
-    .sinc3_map = false,
-    .enhfilten = true,
-    .oder = sinc5_sinc1,
-    .odr = sps_5
-  },
-  [2] = {
-    .sinc3_map = false,
-    .enhfilten = true,
-    .oder = sinc5_sinc1,
-    .odr = sps_5
-  },
-  [3] = {
-    .sinc3_map = false,
-    .enhfilten = true,
-    .oder = sinc5_sinc1,
-    .odr = sps_5
-  }
+  [0] = {.sinc3_map = false, .enhfilten = true, .oder = sinc5_sinc1, .odr = sps_5},
+  [1] = {.sinc3_map = false, .enhfilten = true, .oder = sinc5_sinc1, .odr = sps_10},
+  [2] = {.sinc3_map = false, .enhfilten = true, .oder = sinc5_sinc1, .odr = sps_16},
+  [3] = {.sinc3_map = false, .enhfilten = true, .oder = sinc5_sinc1, .odr = sps_20},
 };
 
 

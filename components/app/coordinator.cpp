@@ -38,6 +38,8 @@ void Coordinator::coordinator_task(void* arg){
 
 bool Coordinator::init(){
 
+  nvs_init();
+  
   gpio_config(&cs_high);
   gpio_set_level(static_cast<gpio_num_t>(CS_ADC) , 1);
   gpio_set_level(static_cast<gpio_num_t>(CS_DAC0), 1);
@@ -154,7 +156,7 @@ void Coordinator::run(){
 
       switch(channel_[i].mode){
 
-        case Mode::OFF:
+        case Mode::IDLE:
           break;
 
         case Mode::STEADY:
@@ -171,3 +173,13 @@ void Coordinator::run(){
   }
 }
 
+void Coordinator::nvs_init(){
+  
+  esp_err_t err = nvs_flash_init();
+  if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND){
+    ESP_ERROR_CHECK(nvs_flash_erase());
+    err = nvs_flash_init();
+  }
+
+  ESP_ERROR_CHECK(err);
+}

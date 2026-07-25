@@ -14,26 +14,29 @@ extern "C" {
   #include "ad5761r.h"
 }
 
+#include <nvs_flash.h>
+#include <nvs.h>
 #include "task_comms.hpp"
 
-/** @brief Transimpedance stage gain: G = 1 + 50k / 401Ω. */
-constexpr const float OPAMP_GAIN = 125.4586051f;
-/** @brief ADC internal reference voltage (V). */
 constexpr const float ADC_VREF = 2.5;
-/** @brief Offset-binary midscale for 24-bit ADC data. */
 constexpr const float ADC_OFFSET = static_cast<float>(0x800000);
-/** @brief Full-scale calibration gain constant used by AD717x conversion math. */
 constexpr const float ADC_GAIN = static_cast<float>(0x555555);
-/** @brief 2^23, used as denominator in voltage conversion. */
 constexpr const float DECI_24BIT = static_cast<float>(0x800000);
-/** @brief Current-sense resistor value in ohms. */
-constexpr const float R_1K = 996.675;
+
+constexpr const float DAC_VREF_DEFAULT = 2.5;
+constexpr const float R_1K_DEFAULT = 1000.0;
+constexpr const float R_GAIN_DEFAULT = 401.0;
+
+constexpr const float DAC_VREF_TOL = 0.005;
+constexpr const float R_1K_TOL = 0.01;
+constexpr const float R_GAIN_TOL = 0.01;
+
 
 /**
  * @brief Phases of a triangular voltage sweep.
  * @details FIRST: 0 → +range. SECOND: +range → −range. THIRD: −range → 0.
  */
-enum class SweepPhase { FIRST, SECOND, THIRD};
+enum class SweepPhase {FIRST, SECOND, THIRD};
 
 /**
  * @brief One output channel: DAC voltage set + ADC current readback.
@@ -68,6 +71,7 @@ class Channel{
     /** @brief One steady iteration: initialize DAC on first call, then sample current. */
     void steady_run();
 
+
     /** @brief Drop DAC to 0 V, mark channel OFF, emit a final DataLog record. */
     void stop();
 
@@ -90,6 +94,14 @@ class Channel{
       uint32_t total_steps_ = 0;
     };
 
+    struct current_sense_t{
+      float r_1k;
+      float r_gain;
+      float dac_vref;
+    };
+
+
+    current_sense_t current_sense_;
     SteadyParams steady_;
     SweepParams sweep_;
 
@@ -97,6 +109,7 @@ class Channel{
     ad5761r_dev* dac_dev_;
 
     int32_t adc_raw_data;
+
 
     /** @brief Convert cmd's duration+time_unit into FreeRTOS ticks; set steady_.timer_en_. */
     void time_to_us(UserCmd& cmd);
@@ -114,6 +127,18 @@ class Channel{
      * @return Voltage in volts (post-PGA, pre-opamp gain).
      */
     float bin_to_voltage(uint32_t bin);
+
+    float get_opamp_gain();
+
+    void calibrate(UserCmd& cmd);
+
+    current_sense_t load_calibration(void);
+
+    void save_calibration(current_sense_t *cal);
+
+    void set_sps(uint8_t setup_id);
+
+    void set_sweep_config(UserCmd& cmd);
 
     /**
      * @brief Poll ADC until a fresh sample for THIS channel is available; return current in µA.

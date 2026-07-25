@@ -20,7 +20,7 @@
  *          SWEEP steps voltage through a triangular ramp; STEADY holds a
  *          fixed voltage; OFF drops the DAC to 0 V and stops logging.
  */
-enum class Mode : uint8_t { SWEEP, STEADY, OFF};
+enum class Mode : uint8_t { SWEEP, STEADY, IDLE};
 
 /**
  * @brief Time unit for STEADY-mode duration.
@@ -53,6 +53,19 @@ struct SweepParams{
 };
 
 
+struct CalParams{
+  bool cal_en;
+  float R_1k;
+  float R_gain;
+  float dac_vref;
+};
+
+struct SpsParams{
+ bool sps_bool;
+ uint8_t setu;
+};
+
+
 /**
  * @brief Command record produced by the serial parser, consumed by Coordinator.
  * @details param is a union sized by whichever mode is set; only the
@@ -64,6 +77,8 @@ struct UserCmd{
   union {
     struct SteadyParams Steady;
     struct SweepParams Sweep;
+    struct CalParams Cal;
+    uint8_t sps_setting;
   } param;
 };
 
@@ -106,3 +121,4 @@ void log_task (void* arg);
  *          Malformed lines are dropped silently.
  */
 void user_cmd_task(void* arg);
+

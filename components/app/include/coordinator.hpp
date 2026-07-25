@@ -15,6 +15,8 @@ extern "C" {
   #include "ad5761r.h"
 }
 
+#include <nvs_flash.h>
+#include <nvs.h>
 #include <driver/spi_master.h>
 #include "channel.hpp"
 
@@ -53,4 +55,6 @@ class Coordinator{
     ad717x_dev *adc_dev_;
     ad5761r_dev *dac_dev_[NUM_CHANNELS];
     Channel channel_[NUM_CHANNELS];
+
+    void nvs_init();
 };
