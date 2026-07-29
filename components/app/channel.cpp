@@ -5,6 +5,9 @@
 
 #include <esp_log.h>
 #include <esp_timer.h>
+#include <nvs_flash.h>
+#include <nvs.h>
+#include <math.h>
 #include "channel.hpp"
 #include "task_comms.hpp"
 
@@ -30,11 +33,7 @@ bool Channel::init(uint8_t id, ad717x_dev* adc_dev, ad5761r_dev* dac_dev){
     dac_dev_ = dac_dev;
 
     ad5761r_write_update_dac_register(dac_dev_, voltage_to_bin(0.0f));
-
-    current_sense_t cal_data = load_calibration();
-    current_sense_.r_1k = cal_data.r_1k;
-    current_sense_.r_gain = cal_data.r_gain;
-    current_sense_.dac_vref = cal_data.dac_vref;
+    current_sense_data_ = load_calibration();
 
     return true;
 }
@@ -45,7 +44,7 @@ void Channel::update(UserCmd& cmd){
   switch (cmd.mode){
 
     case Mode::IDLE:
-      if (cmd.param.Cal.cal_en) calibrate(cmd);
+      if (cmd.param.Cal.cal_en) set_calibration(cmd);
       else if (cmd.param.sps_setting) set_sps(cmd.param.sps_setting);
 
       if (mode != Mode::IDLE) {
@@ -170,7 +169,7 @@ void Channel::stop(){
 
 
 uint16_t Channel::voltage_to_bin(float voltage){
-  return (uint16_t)((voltage / current_sense_.dac_vref + 2.0) * 65535.0 / 4.0);
+  return (uint16_t)((voltage / current_sense_data_.dac_vref + 2.0) * 65535.0 / 4.0);
 }
 
 
@@ -194,8 +193,8 @@ float Channel::get_current(){
     ch_num = raw & 0x0F;
   } while (rdy == 1 || ch_num != channel_id); 
 
-  float opamp_gain = 1 + 50000.0 / current_sense_.r_gain;
-  float current_in_uA = bin_to_voltage(data) / (current_sense_.r_1k * opamp_gain) * 1e6f;
+  float opamp_gain = 1 + 50000.0 / current_sense_data_.r_gain;
+  float current_in_uA = bin_to_voltage(data) / (current_sense_data_.r_1k * opamp_gain) * 1e6f;
 
   return current_in_uA;
 }
@@ -231,23 +230,22 @@ void Channel::time_to_us(UserCmd& cmd){
   }
 }
 
-void Channel::calibrate(UserCmd& cmd){
 
-  current_sense_.r_1k = cmd.param.Cal.R_1k;
-  current_sense_.r_gain = cmd.param.Cal.R_gain;
-  current_sense_.dac_vref = cmd.param.Cal.dac_vref;
+void Channel::set_sps(int sps){
+int sps_options[] = {
+  1, 2, 5, 10, 16, 20, 49, 59, 100, 200, 503, 1007
+};
+ 
+for (size_t i = 0; i < sizeof(sps_options); i++){
+  if (sps == sps_options[i]){
+    char buff[10];
+    snprintf(buff, sizeof(buff), "sps_%d", sps);
+    ad717x_configure_device_odr(adc_dev_, channel_id, *buff);
 
-  save_calibration(&current_sense_);
+    return;
+  }
 }
 
-
-void Channel::set_sps(uint8_t setup_id){
-
-  ad717x_st_reg *chmap = AD717X_GetReg(adc_dev_, AD717X_CHMAP0_REG + channel_id);
-  chmap->value &= ~AD717X_CHMAP_REG_SETUP_SEL_MSK;
-  chmap->value |= AD717X_CHMAP_REG_SETUP_SEL(setup_id);
-
-  AD717X_WriteRegister(adc_dev_, AD717X_CHMAP0_REG + channel_id);
 }
 
 
@@ -263,46 +261,84 @@ void Channel::set_sweep_config(UserCmd& cmd){
 auto Channel::load_calibration() -> current_sense_t {
   
   current_sense_t cal = { R_1K_DEFAULT, R_GAIN_DEFAULT, DAC_VREF_DEFAULT};
+
+  char nvs_key[16];
+  snprintf(nvs_key, sizeof(nvs_key), "cal_ch%u", channel_id);
+
   nvs_handle_t handle;
-
-  esp_err_t err = nvs_open("calib", NVS_READONLY, &handle);
-
-  if (err == ESP_OK){
-    size_t size = sizeof(cal);
-    nvs_get_blob(handle, "cal_data", &cal, &size);
-    nvs_close(handle);
+  esp_err_t err = nvs_open("calibration", NVS_READONLY, &handle);
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "Could not open NVS. Using default values");
+    return cal;
   }
 
+  size_t size = sizeof(cal);
+  err = nvs_get_blob(handle, nvs_key, &cal, &size);
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "No previous calibration record for %s. Using default values", nvs_key);
+    nvs_close(handle);
+    return cal;
+  }
+
+  nvs_close(handle);
   return cal;
 }
 
 
-void Channel::save_calibration(current_sense_t *cal){
+void Channel::set_calibration(UserCmd& cmd){
 
-  float r1k = cal->r_1k;
-  float rg = cal->r_gain;
-  float vref = cal->dac_vref;
+  float r1k = cmd.param.Cal.R_1k;
+  float rg = cmd.param.Cal.R_gain;
+  float vref = cmd.param.Cal.dac_vref;
+  
+  if(isnan(r1k) || isnan(rg) || isnan(vref)) {
+    ESP_LOGE(TAG, "All values must be filled for a channel calibration");
+    return;
+  }
 
-  if (r1k < R_1K_DEFAULT * (1.0 + R_1K_TOL) || r1k > R_1K_DEFAULT * (1.0 - R_1K_TOL)){
+  if (r1k < R_1K_DEFAULT * (1.0 - R_1K_TOL) || r1k > R_1K_DEFAULT * (1.0 + R_1K_TOL)){
     ESP_LOGE(TAG, "1k resistor value is not within %.2f%% tolerance", R_1K_TOL * 100);
     return;
   }
 
-  else if (rg < R_GAIN_DEFAULT * (1.0 + R_GAIN_TOL) || rg > R_GAIN_DEFAULT * (1.0 - R_GAIN_TOL)){
+  else if (rg < R_GAIN_DEFAULT * (1.0 - R_GAIN_TOL) || rg > R_GAIN_DEFAULT * (1.0 + R_GAIN_TOL)){
     ESP_LOGE(TAG, "Op-amp gain resistor value is not within %.2f%% tolerance", R_GAIN_TOL * 100);
     return;
   }
 
-  else if (vref < DAC_VREF_DEFAULT * (1.0 + DAC_VREF_TOL) 
-           || vref > DAC_VREF_DEFAULT * (1.0 - DAC_VREF_TOL)){
+  else if (vref < DAC_VREF_DEFAULT * (1.0 - DAC_VREF_TOL) 
+           || vref > DAC_VREF_DEFAULT * (1.0 + DAC_VREF_TOL)){
     ESP_LOGE(TAG, "DAC Vref is not within %.2f%% tolerance", DAC_VREF_TOL * 100);
     return;
   }
 
+  current_sense_data_ = {.r_1k = r1k, .r_gain = rg, .dac_vref = vref};
+
+  char nvs_key[16];
+  snprintf(nvs_key, sizeof(nvs_key), "cal_ch%u", channel_id);
+
   nvs_handle_t handle;
-  ESP_ERROR_CHECK(nvs_open("calib",NVS_READWRITE, &handle));
-  ESP_ERROR_CHECK(nvs_set_blob(handle, "cal_data", &cal, sizeof(*cal)));
-  ESP_ERROR_CHECK(nvs_commit(handle));
+  esp_err_t err = nvs_open("calibration",NVS_READWRITE, &handle);
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "Could not open NVS with namespace");
+    return;
+  }
+
+  err = nvs_set_blob(handle, nvs_key, &current_sense_data_, sizeof(current_sense_data_));
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "NVS content could not be set with key: %s", nvs_key);
+    nvs_close(handle);
+    return;
+  }
+  
+  err = nvs_commit(handle);
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "NVS could not save calibration value correctly");
+    nvs_close(handle);
+    return;
+  }
+
   nvs_close(handle);
   ESP_LOGI(TAG, "Calibration successful");
 }
+

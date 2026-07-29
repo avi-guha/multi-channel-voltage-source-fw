@@ -51,9 +51,11 @@ void user_cmd_task(void* arg){
 
         char* r1k_tok = strtok_r(nullptr, delimiter, &saveptr);
         char* rgain_tok = strtok_r(nullptr, delimiter, &saveptr);
-        if (!r1k_tok || !rgain_tok) continue;
+        char* dac_vref_tok = strtok_r(nullptr, delimiter, &saveptr);
+        if (!r1k_tok || !rgain_tok || !dac_vref_tok) continue;
         cmd.param.Cal.R_1k = atof(r1k_tok);
         cmd.param.Cal.R_gain = atof(rgain_tok);
+        cmd.param.Cal.dac_vref = atof(dac_vref_tok);
       }
       else if (strcmp(str_tok, "SPS") == 0){
         char* sps_tok = strtok_r(nullptr, delimiter, &saveptr);

@@ -14,22 +14,20 @@ extern "C" {
   #include "ad5761r.h"
 }
 
-#include <nvs_flash.h>
-#include <nvs.h>
 #include "task_comms.hpp"
 
-constexpr const float ADC_VREF = 2.5;
+constexpr const float ADC_VREF = 2.5; //Internal reference voltage
 constexpr const float ADC_OFFSET = static_cast<float>(0x800000);
 constexpr const float ADC_GAIN = static_cast<float>(0x555555);
 constexpr const float DECI_24BIT = static_cast<float>(0x800000);
 
-constexpr const float DAC_VREF_DEFAULT = 2.5;
+constexpr const float DAC_VREF_DEFAULT = 2.5; //External reference voltage
 constexpr const float R_1K_DEFAULT = 1000.0;
 constexpr const float R_GAIN_DEFAULT = 401.0;
 
-constexpr const float DAC_VREF_TOL = 0.005;
-constexpr const float R_1K_TOL = 0.01;
-constexpr const float R_GAIN_TOL = 0.01;
+constexpr const float DAC_VREF_TOL = 0.005; // 0.5% Tolerance
+constexpr const float R_1K_TOL = 0.01; // 1% Tolerance
+constexpr const float R_GAIN_TOL = 0.01; // 1% Tolerance
 
 
 /**
@@ -101,7 +99,7 @@ class Channel{
     };
 
 
-    current_sense_t current_sense_;
+    current_sense_t current_sense_data_;
     SteadyParams steady_;
     SweepParams sweep_;
 
@@ -128,15 +126,15 @@ class Channel{
      */
     float bin_to_voltage(uint32_t bin);
 
-    float get_opamp_gain();
+    float get_opamp_gain(void);
 
     void calibrate(UserCmd& cmd);
 
     current_sense_t load_calibration(void);
 
-    void save_calibration(current_sense_t *cal);
+    void set_calibration(UserCmd& cmd);
 
-    void set_sps(uint8_t setup_id);
+    void set_sps(int sps);
 
     void set_sweep_config(UserCmd& cmd);
 
@@ -144,5 +142,5 @@ class Channel{
      * @brief Poll ADC until a fresh sample for THIS channel is available; return current in µA.
      * @return Measured current in microamps (V_adc / (R × opamp_gain), scaled to µA).
      */
-    float get_current();
+    float get_current(void);
 };

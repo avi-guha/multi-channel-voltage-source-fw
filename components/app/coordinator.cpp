@@ -54,18 +54,6 @@ bool Coordinator::init(){
     return false;
   }
 
-  ad5761r_init_param dac_init_param = {
-    .spi_init = *dac_config[0],
-    .type = AD5761R,
-    .out_range = AD5761R_RANGE_M_5V_TO_P_5V,
-    .pwr_voltage = AD5761R_SCALE_HALF,
-    .clr_voltage = AD5761R_SCALE_HALF,
-    .int_ref_en = true,
-    .exc_temp_sd_en = true,
-    .b2c_range_en = false,
-    .ovr_en = false,
-    .daisy_chain_en = true,
-  };
 
   ad717x_init_param adc_init_param = {
     .spi_init = adc_config,
@@ -86,6 +74,20 @@ bool Coordinator::init(){
     return false;
   }
 
+
+  ad5761r_init_param dac_init_param = {
+    .spi_init = *dac_config[0],
+    .type = AD5761R,
+    .out_range = AD5761R_RANGE_M_5V_TO_P_5V,
+    .pwr_voltage = AD5761R_SCALE_HALF,
+    .clr_voltage = AD5761R_SCALE_HALF,
+    .int_ref_en = true,
+    .exc_temp_sd_en = true,
+    .b2c_range_en = false,
+    .ovr_en = false,
+    .daisy_chain_en = true,
+  };
+
   for (int i = 0; i < NUM_CHANNELS; i++){
 
     dac_init_param.spi_init = *dac_config[i]; 
@@ -93,8 +95,9 @@ bool Coordinator::init(){
       ESP_LOGE(TAG, "DAC %d failed to initialize", i);
       return false;
     }
-    
-    ad5761r_software_full_reset(dac_dev_[i]); //Avoids edge case brownout triggering on boot
+
+    //Avoids edge case brownout triggering on boot
+    ad5761r_software_full_reset(dac_dev_[i]); 
     ad5761r_config(dac_dev_[i]);
 
     if (!channel_[i].init(i, adc_dev_, dac_dev_[i])){
@@ -102,6 +105,7 @@ bool Coordinator::init(){
       return false;
     }
   }  
+
 
   //Appends 1 byte statistics to ADC readout. 
   //Used to identify channel ID for given adc data
@@ -144,6 +148,7 @@ bool Coordinator::init(){
   return true;
 }
 
+
 void Coordinator::run(){
 
   while(true){ 
@@ -167,11 +172,13 @@ void Coordinator::run(){
           channel_[i].sweep_run();
           break;
       }
+
+     esp_task_wdt_reset();
     }
 
-    esp_task_wdt_reset();
   }
 }
+
 
 void Coordinator::nvs_init(){
   

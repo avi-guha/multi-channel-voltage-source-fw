@@ -136,7 +136,7 @@ const uint8_t ad7172_2_num_regs = sizeof(ad7172_2_regs) / sizeof(ad7172_2_regs[0
 struct ad717x_channel_map chan_map[NUM_CHANNELS] = {
   [0] = {
     .channel_enable = true,
-    .setup_sel = 1,
+    .setup_sel = 0,
     .analog_inputs = {
       .ainp = {
         .pos_analog_input = AIN0,
@@ -156,7 +156,7 @@ struct ad717x_channel_map chan_map[NUM_CHANNELS] = {
   }, 
   [2] = {
     .channel_enable = true,
-    .setup_sel = 1,
+    .setup_sel = 2,
     .analog_inputs = {
       .ainp = {
         .pos_analog_input = AIN2,
@@ -166,7 +166,7 @@ struct ad717x_channel_map chan_map[NUM_CHANNELS] = {
   }, 
   [3] = {
     .channel_enable = true,
-    .setup_sel = 1,
+    .setup_sel = 3,
     .analog_inputs = {
       .ainp = {
         .pos_analog_input = AIN3,
@@ -186,10 +186,10 @@ struct ad717x_channel_setup setup[NUM_CHANNELS] = {
 
 
 struct ad717x_filtcon filtcon[NUM_CHANNELS] = {
-  [0] = {.sinc3_map = false, .enhfilten = true, .oder = sinc5_sinc1, .odr = sps_5},
+  [0] = {.sinc3_map = false, .enhfilten = true, .oder = sinc5_sinc1, .odr = sps_10},
   [1] = {.sinc3_map = false, .enhfilten = true, .oder = sinc5_sinc1, .odr = sps_10},
-  [2] = {.sinc3_map = false, .enhfilten = true, .oder = sinc5_sinc1, .odr = sps_16},
-  [3] = {.sinc3_map = false, .enhfilten = true, .oder = sinc5_sinc1, .odr = sps_20},
+  [2] = {.sinc3_map = false, .enhfilten = true, .oder = sinc5_sinc1, .odr = sps_10},
+  [3] = {.sinc3_map = false, .enhfilten = true, .oder = sinc5_sinc1, .odr = sps_10},
 };
 
 
