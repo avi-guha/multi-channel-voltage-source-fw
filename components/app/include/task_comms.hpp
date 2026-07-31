@@ -20,7 +20,7 @@
  *          SWEEP steps voltage through a triangular ramp; STEADY holds a
  *          fixed voltage; OFF drops the DAC to 0 V and stops logging.
  */
-enum class Mode : uint8_t { SWEEP, STEADY, IDLE};
+enum class Mode : uint8_t {SWEEP, STEADY, IDLE, CALIBRATION, ODR};
 
 /**
  * @brief Time unit for STEADY-mode duration.
@@ -60,9 +60,9 @@ struct CalParams{
   float dac_vref;
 };
 
-struct SpsParams{
- bool sps_bool;
- uint8_t setu;
+struct OdrParams{
+ bool odr_change;
+ float odr_setting;
 };
 
 
@@ -78,7 +78,7 @@ struct UserCmd{
     struct SteadyParams Steady;
     struct SweepParams Sweep;
     struct CalParams Cal;
-    uint8_t sps_setting;
+    float odr_setting;
   } param;
 };
 

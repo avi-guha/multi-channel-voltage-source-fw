@@ -8,6 +8,7 @@
 #include <nvs_flash.h>
 #include <nvs.h>
 #include <math.h>
+#include "coordinator.hpp"
 #include "channel.hpp"
 #include "task_comms.hpp"
 
@@ -25,42 +26,56 @@ Channel::Channel()
 
 
 bool Channel::init(uint8_t id, ad717x_dev* adc_dev, ad5761r_dev* dac_dev){
-    
+
   if (adc_dev == nullptr || dac_dev == nullptr) return false;
 
-    channel_id = id;
-    adc_dev_ = adc_dev;
-    dac_dev_ = dac_dev;
+  channel_id = id;
+  channel_odr = ODR_DEFAULT;
+  adc_dev_ = adc_dev;
+  dac_dev_ = dac_dev;
 
-    ad5761r_write_update_dac_register(dac_dev_, voltage_to_bin(0.0f));
-    current_sense_data_ = load_calibration();
+  current_sense_data_ = load_calibration();
+  ad5761r_write_update_dac_register(dac_dev_, voltage_to_bin(0.0f));
 
-    return true;
+  adc_internal_calibration();
+  ad717x_set_channel_status(adc_dev_, channel_id, false);
+
+  return true;
 }
 
 
-void Channel::update(UserCmd& cmd){
+void Channel::update(const UserCmd& cmd){
 
   switch (cmd.mode){
 
     case Mode::IDLE:
-      if (cmd.param.Cal.cal_en) set_calibration(cmd);
-      else if (cmd.param.sps_setting) set_sps(cmd.param.sps_setting);
-
       if (mode != Mode::IDLE) {
         ESP_LOGI(TAG, "Ch%d stopped", channel_id);
         stop();
       }
       break;
 
+    case Mode::CALIBRATION:
+      set_calibration(cmd); 
+      break;
+
+    case Mode::ODR:
+      set_odr(cmd.param.odr_setting);
+      adc_internal_calibration();
+      break;
+
     case Mode::SWEEP:
       mode = Mode::SWEEP;
+      
+      ad717x_set_channel_status(adc_dev_, channel_id, true);
       set_sweep_config(cmd);
       break;
 
     case Mode::STEADY:
       mode = Mode::STEADY;
-      time_to_us(cmd);    
+
+      ad717x_set_channel_status(adc_dev_, channel_id, true);
+      time_to_us(cmd);
       steady_.voltage_ = cmd.param.Steady.voltage;
       steady_.initialized_ = false;
       break;
@@ -80,20 +95,7 @@ void Channel::steady_run(){
     }
   }
 
-  vTaskDelay(pdMS_TO_TICKS(10));
-  float current = get_current();
-
-  data = {
-    .channel_id = channel_id,
-    .mode = mode,
-    .voltage = steady_.voltage_,
-    .current = current,
-    .time = esp_timer_get_time() / 1e6f,
-  };
-
-  xQueueSend(data_queue, &data, 0);
-
-  if (esp_timer_get_time() > steady_.finish_time_){
+  if (steady_.timer_en_ && esp_timer_get_time() > steady_.finish_time_){
     ESP_LOGI(TAG, "Ch%d steady timer done", channel_id);
     stop();
   } 
@@ -102,52 +104,45 @@ void Channel::steady_run(){
 
 void Channel::sweep_run(){
 
-  ad5761r_write_update_dac_register(dac_dev_, voltage_to_bin(sweep_.voltage_in_V_));
-  vTaskDelay(pdMS_TO_TICKS(10));
-  float current = get_current();
+  if (sweep_.next_step_rdy){
 
-  data = {
-    .channel_id = channel_id,
-    .mode = mode,
-    .voltage = sweep_.voltage_in_V_,
-    .current = current,
-    .time = esp_timer_get_time() / 1e6f,
-  };
+    sweep_.next_step_rdy = false;
+    ad5761r_write_update_dac_register(dac_dev_, voltage_to_bin(sweep_.voltage_in_V_));
 
-  xQueueSend(data_queue, &data, 0);
+    switch (sweep_.phase_){
 
-  switch (sweep_.phase_){
+      case SweepPhase::FIRST:
 
-    case SweepPhase::FIRST:
+        if (sweep_.voltage_in_V_ < sweep_.range_in_V_){
+          sweep_.voltage_in_V_ += sweep_.step_size_V_;
+        }
+        else{
+          sweep_.phase_ = SweepPhase::SECOND;
+        }
+        break;
 
-      if (sweep_.voltage_in_V_ < sweep_.range_in_V_){
-        sweep_.voltage_in_V_ += sweep_.step_size_V_;
-      }
-      else{
-        sweep_.phase_ = SweepPhase::SECOND;
-      }
-      break;
+      case SweepPhase::SECOND:
 
-    case SweepPhase::SECOND:
+        if (sweep_.voltage_in_V_ > - sweep_.range_in_V_){
+          sweep_.voltage_in_V_ -= sweep_.step_size_V_;
+        }
+        else{
+          sweep_.phase_ = SweepPhase::THIRD;
+        }
+        break;
 
-      if (sweep_.voltage_in_V_ > - sweep_.range_in_V_){
-        sweep_.voltage_in_V_ -= sweep_.step_size_V_;
-      }
-      else{
-        sweep_.phase_ = SweepPhase::THIRD;
-      }
-      break;
+      case SweepPhase::THIRD:
 
-    case SweepPhase::THIRD:
-
-      if (sweep_.voltage_in_V_ < 0){
-        sweep_.voltage_in_V_ += sweep_.step_size_V_;
-      }
-      else{
-        ESP_LOGI(TAG, "Ch%d sweep done", channel_id);
-        stop();
-      }
-      break;
+        if (sweep_.voltage_in_V_ < 0){
+          sweep_.voltage_in_V_ += sweep_.step_size_V_;
+        }
+        else{
+          ESP_LOGI(TAG, "Ch%d sweep done", channel_id);
+          stop();
+        }
+        break;
+    }
+    
   }
 }
 
@@ -164,6 +159,7 @@ void Channel::stop(){
   };
   xQueueSend(data_queue, &data, 0);
 
+  ad717x_set_channel_status(adc_dev_, channel_id, false);
   ESP_LOGI(TAG,"CH%d Going back to standby", channel_id);
 }
 
@@ -179,28 +175,31 @@ float Channel::bin_to_voltage(uint32_t bin){
 }
 
 
-float Channel::get_current(){
-  uint32_t raw = 0;
-  uint32_t data = 0;
-  uint8_t rdy = 1;
-  uint8_t ch_num = 0;
+void Channel::compute_and_send_current(uint32_t adc_data){
 
-  do {
-    AD717X_ReadData(adc_dev_, &adc_raw_data);
-    raw = (uint32_t) adc_raw_data;
-    data = (raw >> 8) & 0xFFFFFF;
-    rdy = (raw & 0x80) >> 7;
-    ch_num = raw & 0x0F;
-  } while (rdy == 1 || ch_num != channel_id); 
+  if (mode == Mode::IDLE) return;
 
   float opamp_gain = 1 + 50000.0 / current_sense_data_.r_gain;
-  float current_in_uA = bin_to_voltage(data) / (current_sense_data_.r_1k * opamp_gain) * 1e6f;
+  float current_in_uA = bin_to_voltage(adc_data) / (current_sense_data_.r_1k * opamp_gain) * 1e6f;
 
-  return current_in_uA;
+  data = {
+    .channel_id = channel_id,
+    .mode = mode,
+    .voltage = steady_.voltage_,
+    .current = current_in_uA,
+    .time = esp_timer_get_time() / 1e6f,
+  };
+
+  if (mode == Mode::SWEEP){
+    sweep_.next_step_rdy = true;
+    data.voltage = sweep_.voltage_in_V_;
+  } 
+
+  xQueueSend(data_queue, &data, 0);
 }
 
 
-void Channel::time_to_us(UserCmd& cmd){
+void Channel::time_to_us(const UserCmd& cmd){
 
   switch(cmd.param.Steady.time_unit){
 
@@ -231,31 +230,77 @@ void Channel::time_to_us(UserCmd& cmd){
 }
 
 
-void Channel::set_sps(int sps){
-int sps_options[] = {
-  1, 2, 5, 10, 16, 20, 49, 59, 100, 200, 503, 1007
-};
+void Channel::set_odr(float new_odr){
+
+  if (channel_odr == new_odr) return; 
  
-for (size_t i = 0; i < sizeof(sps_options); i++){
-  if (sps == sps_options[i]){
-    char buff[10];
-    snprintf(buff, sizeof(buff), "sps_%d", sps);
-    ad717x_configure_device_odr(adc_dev_, channel_id, *buff);
-
-    return;
+  ad717x_set_channel_status(adc_dev_, channel_id, true);
+  AD717X_WaitForReady(adc_dev_, AD717X_CONV_TIMEOUT);
+  for (const odrLut& entry : odr_lut){
+    if (entry.rate == new_odr){
+      ad717x_configure_device_odr(adc_dev_, channel_id, entry.odr);
+      AD717X_WaitForReady(adc_dev_, AD717X_CONV_TIMEOUT);
+      ad717x_set_channel_status(adc_dev_, channel_id, false);
+      return;
+    }
   }
+   
+  ad717x_configure_device_odr(adc_dev_, channel_id, sps_10);
+  ESP_LOGW(TAG, "Invalid ODR. Using default: 10 SPS");
+  AD717X_WaitForReady(adc_dev_, AD717X_CONV_TIMEOUT);
+  ad717x_set_channel_status(adc_dev_, channel_id, false);
+  return;
 }
 
-}
 
-
-void Channel::set_sweep_config(UserCmd& cmd){
+void Channel::set_sweep_config(const UserCmd& cmd){
 
   sweep_.phase_ = SweepPhase::FIRST; 
   sweep_.range_in_V_ = cmd.param.Sweep.range_in_V; 
   sweep_.step_size_V_ = cmd.param.Sweep.step_size / 1000;
   sweep_.single_sweep_steps_ = sweep_.range_in_V_ / sweep_.step_size_V_;
   sweep_.voltage_in_V_ = 0.0f;
+  sweep_.next_step_rdy = false;
+}
+
+
+void Channel::adc_internal_calibration(){
+
+  bool ch_en[NUM_CHANNELS];
+
+  for (uint8_t i = 0; i < NUM_CHANNELS; i++){
+    ch_en[i] = adc_dev_->chan_map[i].channel_enable;
+    if (ch_en[i]) ad717x_set_channel_status(adc_dev_, i, false);
+  }
+  ad717x_set_channel_status(adc_dev_, channel_id, true);
+
+  AD717X_WaitForReady(adc_dev_, AD717X_CONV_TIMEOUT);
+  ad717x_st_reg* adcmode = AD717X_GetReg(adc_dev_, AD717X_ADCMODE_REG);
+  adcmode->value &= ~AD717X_ADCMODE_REG_MODE_MSK;
+  adcmode->value |= AD717X_ADCMODE_REG_MODE(INTERNAL_OFFSET_CALIB);
+  if (AD717X_WriteRegister(adc_dev_, AD717X_ADCMODE_REG) < 0) {
+    ESP_LOGE(TAG, "ADC Internal offset calibration for ch%u failed", channel_id);
+  }
+
+  AD717X_WaitForReady(adc_dev_, AD717X_CONV_TIMEOUT);
+  adcmode = AD717X_GetReg(adc_dev_, AD717X_ADCMODE_REG);
+  adcmode->value &= ~AD717X_ADCMODE_REG_MODE_MSK;
+  adcmode->value |= AD717X_ADCMODE_REG_MODE(INTERNAL_GAIN_CALIB);
+  if (AD717X_WriteRegister(adc_dev_, AD717X_ADCMODE_REG) < 0) {
+    ESP_LOGE(TAG, "ADC Internal gain calibration for ch%u failed", channel_id);
+  }
+
+  for (uint8_t i = 0; i < NUM_CHANNELS; i++){
+   if (i != channel_id && ch_en[i]) ad717x_set_channel_status(adc_dev_, i, true);
+  }
+
+  AD717X_WaitForReady(adc_dev_, AD717X_CONV_TIMEOUT);
+  adcmode = AD717X_GetReg(adc_dev_, AD717X_ADCMODE_REG);
+  adcmode->value &= ~AD717X_ADCMODE_REG_MODE_MSK;
+  adcmode->value |= AD717X_ADCMODE_REG_MODE(CONTINUOUS);
+  if (AD717X_WriteRegister(adc_dev_, AD717X_ADCMODE_REG) < 0) {
+    ESP_LOGE(TAG, "Continuous mode transition for ch%u failed", channel_id);
+  }
 }
 
 auto Channel::load_calibration() -> current_sense_t {
@@ -268,14 +313,14 @@ auto Channel::load_calibration() -> current_sense_t {
   nvs_handle_t handle;
   esp_err_t err = nvs_open("calibration", NVS_READONLY, &handle);
   if (err != ESP_OK) {
-    ESP_LOGE(TAG, "Could not open NVS. Using default values");
+    ESP_LOGI(TAG, "Could not open NVS. Using default values");
     return cal;
   }
 
   size_t size = sizeof(cal);
   err = nvs_get_blob(handle, nvs_key, &cal, &size);
   if (err != ESP_OK) {
-    ESP_LOGE(TAG, "No previous calibration record for %s. Using default values", nvs_key);
+    ESP_LOGI(TAG, "Ch%u: No previous calibration record. Using default values", channel_id);
     nvs_close(handle);
     return cal;
   }
@@ -285,7 +330,8 @@ auto Channel::load_calibration() -> current_sense_t {
 }
 
 
-void Channel::set_calibration(UserCmd& cmd){
+void Channel::set_calibration(const UserCmd& cmd){
+  ESP_LOGI(TAG, "reached here");
 
   float r1k = cmd.param.Cal.R_1k;
   float rg = cmd.param.Cal.R_gain;
@@ -313,6 +359,7 @@ void Channel::set_calibration(UserCmd& cmd){
   }
 
   current_sense_data_ = {.r_1k = r1k, .r_gain = rg, .dac_vref = vref};
+  ESP_LOGI(TAG, "set vref: %.5f", current_sense_data_.dac_vref);
 
   char nvs_key[16];
   snprintf(nvs_key, sizeof(nvs_key), "cal_ch%u", channel_id);
@@ -320,6 +367,7 @@ void Channel::set_calibration(UserCmd& cmd){
   nvs_handle_t handle;
   esp_err_t err = nvs_open("calibration",NVS_READWRITE, &handle);
   if (err != ESP_OK) {
+
     ESP_LOGE(TAG, "Could not open NVS with namespace");
     return;
   }

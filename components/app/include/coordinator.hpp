@@ -21,7 +21,6 @@ extern "C" {
 #include "channel.hpp"
 
 
-/** @brief Number of independent output channels supported by this build. */
 static constexpr uint8_t NUM_CHANNELS = 4;
 
 /**
@@ -38,16 +37,6 @@ class Coordinator{
      */
     static void coordinator_task(void* arg);
 
-    /**
-     * @brief Bring up SPI bus, ADC, DACs, and each Channel.
-     * @return true on success; false on any peripheral init failure.
-     */
-    bool init();
-
-    /**
-     * @brief Main control loop: dispatch commands and step every channel.
-     */
-    void run();
 
 
   private:
@@ -56,5 +45,18 @@ class Coordinator{
     ad5761r_dev *dac_dev_[NUM_CHANNELS];
     Channel channel_[NUM_CHANNELS];
 
-    void nvs_init();
+    /**
+     * @brief Bring up SPI bus, ADC, DACs, and each Channel.
+     * @return true on success; false on any peripheral init failure.
+     */
+    bool init(void);
+
+    /**
+     * @brief Main control loop: dispatch commands and step every channel.
+     */
+    void run(void);
+
+    void poll_adc_dispatch_to_channel(void);
+
+    void nvs_init(void);
 };

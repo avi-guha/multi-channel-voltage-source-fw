@@ -25,10 +25,11 @@ constexpr const float DAC_VREF_DEFAULT = 2.5; //External reference voltage
 constexpr const float R_1K_DEFAULT = 1000.0;
 constexpr const float R_GAIN_DEFAULT = 401.0;
 
-constexpr const float DAC_VREF_TOL = 0.005; // 0.5% Tolerance
+constexpr const float DAC_VREF_TOL = 0.01; // 0.5% Tolerance
 constexpr const float R_1K_TOL = 0.01; // 1% Tolerance
 constexpr const float R_GAIN_TOL = 0.01; // 1% Tolerance
 
+constexpr const float ODR_DEFAULT = 10.0; 
 
 /**
  * @brief Phases of a triangular voltage sweep.
@@ -46,6 +47,7 @@ class Channel{
     Channel();
     uint8_t channel_id;   
     Mode mode;            
+    float channel_odr;
     bool done;            
 
     /**
@@ -61,7 +63,9 @@ class Channel{
      * @brief Apply a new UserCmd — switches mode and resets per-mode state.
      * @param cmd Parsed user command targeting this channel.
      */
-    void update(UserCmd& cmd);
+    void update(const UserCmd& cmd);
+
+    void compute_and_send_current(uint32_t adc_data);
 
     /** @brief One sweep step: set next DAC voltage, sample current, advance phase. */
     void sweep_run();
@@ -74,6 +78,24 @@ class Channel{
     void stop();
 
   private:
+
+    struct odrLut{
+      float rate;
+      ad717x_odr odr;
+    };
+
+    static constexpr odrLut odr_lut[] = {
+      { 1.25,  sps_1p25 },
+      { 2.5,   sps_2p5  },
+      { 5.0,   sps_5    },
+      { 10.0,  sps_10   },
+      { 16.0,  sps_16   },
+      { 20.0,  sps_20   },
+      { 49.0,  sps_49   },
+      { 59.0,  sps_59   },
+      { 100.0, sps_100  },
+      { 200.0, sps_200  },
+    };
 
     struct SteadyParams{
       bool initialized_ = false;
@@ -90,6 +112,7 @@ class Channel{
       float voltage_in_V_ = 0.0f;
       uint32_t single_sweep_steps_ = 0;
       uint32_t total_steps_ = 0;
+      bool next_step_rdy = false;
     };
 
     struct current_sense_t{
@@ -110,7 +133,7 @@ class Channel{
 
 
     /** @brief Convert cmd's duration+time_unit into FreeRTOS ticks; set steady_.timer_en_. */
-    void time_to_us(UserCmd& cmd);
+    void time_to_us(const UserCmd& cmd);
 
     /**
      * @brief Convert a voltage (V, ±5V range) to an AD5761R 16-bit code.
@@ -128,19 +151,14 @@ class Channel{
 
     float get_opamp_gain(void);
 
-    void calibrate(UserCmd& cmd);
+    void adc_internal_calibration(void);
 
     current_sense_t load_calibration(void);
 
-    void set_calibration(UserCmd& cmd);
+    void set_calibration(const UserCmd& cmd);
 
-    void set_sps(int sps);
+    void set_odr(float odr);
 
-    void set_sweep_config(UserCmd& cmd);
+    void set_sweep_config(const UserCmd& cmd);
 
-    /**
-     * @brief Poll ADC until a fresh sample for THIS channel is available; return current in µA.
-     * @return Measured current in microamps (V_adc / (R × opamp_gain), scaled to µA).
-     */
-    float get_current(void);
 };

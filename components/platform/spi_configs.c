@@ -186,10 +186,10 @@ struct ad717x_channel_setup setup[NUM_CHANNELS] = {
 
 
 struct ad717x_filtcon filtcon[NUM_CHANNELS] = {
-  [0] = {.sinc3_map = false, .enhfilten = true, .oder = sinc5_sinc1, .odr = sps_10},
-  [1] = {.sinc3_map = false, .enhfilten = true, .oder = sinc5_sinc1, .odr = sps_10},
-  [2] = {.sinc3_map = false, .enhfilten = true, .oder = sinc5_sinc1, .odr = sps_10},
-  [3] = {.sinc3_map = false, .enhfilten = true, .oder = sinc5_sinc1, .odr = sps_10},
+  [0] = {.sinc3_map = false, .enhfilten = false, .oder = sinc5_sinc1, .odr = sps_10},
+  [1] = {.sinc3_map = false, .enhfilten = false, .oder = sinc5_sinc1, .odr = sps_10},
+  [2] = {.sinc3_map = false, .enhfilten = false, .oder = sinc5_sinc1, .odr = sps_10},
+  [3] = {.sinc3_map = false, .enhfilten = false, .oder = sinc5_sinc1, .odr = sps_10},
 };
 
 

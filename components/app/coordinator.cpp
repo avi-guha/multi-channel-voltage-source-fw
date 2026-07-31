@@ -15,7 +15,6 @@
 
 static constexpr const char* TAG = "Coordinator";
 
-extern UserCmd cmd;
 static Coordinator coordinator;
 
 
@@ -66,11 +65,21 @@ bool Coordinator::init(){
     .chan_map = {chan_map[0], chan_map[1], chan_map[2], chan_map[3]},
     .setups = {setup[0], setup[1], setup[2], setup[3]},
     .filter_configuration = {filtcon[0], filtcon[1], filtcon[2], filtcon[3]},
-    .mode = INTERNAL_OFFSET_CALIB
+    .mode = CONTINUOUS
   };
 
   if (AD717X_Init(&adc_dev_, adc_init_param) < 0){
     ESP_LOGE(TAG, "ADC init failed");
+    return false;
+  }
+
+  //Appends 1 byte statistics to ADC readout. 
+  //Used to identify channel ID for given adc data
+  AD717X_WaitForReady(adc_dev_, AD717X_CONV_TIMEOUT);
+  ad717x_st_reg *ifmode = AD717X_GetReg(adc_dev_, AD717X_IFMODE_REG);
+  ifmode->value |= AD717X_IFMODE_REG_DATA_STAT;
+  if (AD717X_WriteRegister(adc_dev_, AD717X_IFMODE_REG) < 0) {
+    ESP_LOGE(TAG, "IFMODE write failed");
     return false;
   }
 
@@ -87,6 +96,7 @@ bool Coordinator::init(){
     .ovr_en = false,
     .daisy_chain_en = true,
   };
+
 
   for (int i = 0; i < NUM_CHANNELS; i++){
 
@@ -106,44 +116,6 @@ bool Coordinator::init(){
     }
   }  
 
-
-  //Appends 1 byte statistics to ADC readout. 
-  //Used to identify channel ID for given adc data
-  ad717x_st_reg *ifmode = AD717X_GetReg(adc_dev_, AD717X_IFMODE_REG);
-  ifmode->value |= AD717X_IFMODE_REG_DATA_STAT;
-  if (AD717X_WriteRegister(adc_dev_, AD717X_IFMODE_REG) < 0) {
-    ESP_LOGE(TAG, "IFMODE write failed");
-    return false;
-  }
-
-  vTaskDelay(pdMS_TO_TICKS(50));
-
-  AD717X_WaitForReady(adc_dev_, AD717X_CONV_TIMEOUT);
-  ad717x_st_reg *adcmode = AD717X_GetReg(adc_dev_, AD717X_ADCMODE_REG);
-  adcmode->value &= ~AD717X_ADCMODE_REG_MODE_MSK;
-  adcmode->value |= AD717X_ADCMODE_REG_MODE(INTERNAL_GAIN_CALIB);
-  if (AD717X_WriteRegister(adc_dev_, AD717X_ADCMODE_REG) < 0) {
-    ESP_LOGE(TAG, "ADC Internal gain calibration failed");
-    return false;
-  }
-
-  AD717X_WaitForReady(adc_dev_, AD717X_CONV_TIMEOUT);
-  adcmode->value &= ~AD717X_ADCMODE_REG_MODE_MSK;
-  adcmode->value |= AD717X_ADCMODE_REG_MODE(SYS_OFFSET_CALIB);
-  if (AD717X_WriteRegister(adc_dev_, AD717X_ADCMODE_REG) < 0) {
-    ESP_LOGE(TAG, "ADC System offset calibration failed");
-    return false;
-  }
-
-  AD717X_WaitForReady(adc_dev_, AD717X_CONV_TIMEOUT);
-  adcmode->value &= ~AD717X_ADCMODE_REG_MODE_MSK;
-  adcmode->value |= AD717X_ADCMODE_REG_MODE(CONTINUOUS);
-  if (AD717X_WriteRegister(adc_dev_, AD717X_ADCMODE_REG) < 0) {
-    ESP_LOGE(TAG, "Continuous mode transition failed");
-    return false;
-  }
-
-  vTaskDelay(pdMS_TO_TICKS(60));
   ESP_LOGI(TAG, "startup complete");
   return true;
 }
@@ -151,17 +123,27 @@ bool Coordinator::init(){
 
 void Coordinator::run(){
 
+  UserCmd cmd;
+
   while(true){ 
 
     while(xQueueReceive(user_cmd_queue, &cmd, 1) == pdTRUE){
       channel_[cmd.channel_id].update(cmd);
     }
+    
+    poll_adc_dispatch_to_channel();
 
     for(int i = 0; i < NUM_CHANNELS; i++){
 
       switch(channel_[i].mode){
 
         case Mode::IDLE:
+          break;
+
+        case Mode::CALIBRATION:
+          break;
+
+        case Mode::ODR:
           break;
 
         case Mode::STEADY:
@@ -175,13 +157,47 @@ void Coordinator::run(){
 
      esp_task_wdt_reset();
     }
+  }
+}
 
+
+void Coordinator::poll_adc_dispatch_to_channel(){
+
+  int32_t adc_raw_data;
+  uint32_t raw = 0;
+  uint32_t data = 0;
+  uint8_t rdy = 1;
+  uint8_t ch_num = 0;
+  
+  while (true){
+
+    AD717X_ReadData(adc_dev_, &adc_raw_data);
+    raw = (uint32_t) adc_raw_data;
+    data = (raw >> 8) & 0xFFFFFF;
+    rdy = (raw & 0x80) >> 7;
+    ch_num = raw & 0x0F;
+    if (rdy == 1) return;
+
+    switch (ch_num) {
+      case 0:
+        channel_[0].compute_and_send_current(data);
+        break;
+      case 1:
+        channel_[1].compute_and_send_current(data);
+        break;
+      case 2:
+        channel_[2].compute_and_send_current(data);
+        break;
+      case 3:
+        channel_[3].compute_and_send_current(data);
+        break;
+    }
   }
 }
 
 
 void Coordinator::nvs_init(){
-  
+
   esp_err_t err = nvs_flash_init();
   if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND){
     ESP_ERROR_CHECK(nvs_flash_erase());

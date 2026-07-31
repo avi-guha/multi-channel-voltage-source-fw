@@ -6,32 +6,52 @@
 #include <stdio.h>
 #include <cstring>
 #include <esp_log.h>
+#include <esp_timer.h>
 #include "task_comms.hpp"
+#include "coordinator.hpp"
 
+#define DEBUG false;
 
 QueueHandle_t event_queue;
 QueueHandle_t data_queue;
 QueueHandle_t user_cmd_queue;
 
-UserCmd cmd;
 
+#ifdef DEBUG
+static constexpr const char* TAG = "Comms";
+#endif
 
 void user_cmd_task(void* arg){
 
+  UserCmd cmd;
   char buffer[128];
+  char* saveptr = nullptr;
   const char delimiter[] = ",";
+  int64_t wdt_connection = esp_timer_get_time();
 
   while(true){
 
     if (fgets(buffer, sizeof(buffer), stdin) == nullptr){
+
+      //Software watchdog for USB cable connection. 
+      //Checks for the signal from laptop sent every 2 seconds  
+      if ((esp_timer_get_time() - wdt_connection) > 2.5 * 1e6) {
+        for (uint8_t i = 0; i < NUM_CHANNELS; i++){
+          cmd.channel_id = i;
+          cmd.mode = Mode::IDLE;
+          xQueueSend(user_cmd_queue, &cmd, 0);
+        }
+      }
+
       vTaskDelay(pdMS_TO_TICKS(20));
       continue;
     }
+     
+    wdt_connection = esp_timer_get_time();
 
     buffer[strcspn(buffer, "\r\n")] = '\0';
-    char* ch_token;
-    char* saveptr = nullptr;
 
+    char* ch_token;
     ch_token = strtok_r(buffer, delimiter, &saveptr);
     if (!ch_token) continue;
     cmd.channel_id = atoi(ch_token);
@@ -41,27 +61,28 @@ void user_cmd_task(void* arg){
 
     if (strcmp(mode_tok,"OFF") == 0){
       cmd.mode = Mode::IDLE;
-      cmd.param.Cal.cal_en = false;
-      
-      char* str_tok = strtok_r(nullptr, delimiter, &saveptr);
-      if (!str_tok) continue;
+    }
+    else if (strcmp(mode_tok, "CALIBRATION") == 0){
 
-      if (strcmp(str_tok, "CALIBRATION") == 0){
-        cmd.param.Cal.cal_en = true;
+      cmd.mode = Mode::CALIBRATION;
 
-        char* r1k_tok = strtok_r(nullptr, delimiter, &saveptr);
-        char* rgain_tok = strtok_r(nullptr, delimiter, &saveptr);
-        char* dac_vref_tok = strtok_r(nullptr, delimiter, &saveptr);
-        if (!r1k_tok || !rgain_tok || !dac_vref_tok) continue;
-        cmd.param.Cal.R_1k = atof(r1k_tok);
-        cmd.param.Cal.R_gain = atof(rgain_tok);
-        cmd.param.Cal.dac_vref = atof(dac_vref_tok);
-      }
-      else if (strcmp(str_tok, "SPS") == 0){
-        char* sps_tok = strtok_r(nullptr, delimiter, &saveptr);
-        if (!sps_tok) continue;
-        cmd.param.sps_setting = atoi(sps_tok);
-      }
+      char* r1k_tok = strtok_r(nullptr, delimiter, &saveptr);
+      char* rgain_tok = strtok_r(nullptr, delimiter, &saveptr);
+      char* dac_vref_tok = strtok_r(nullptr, delimiter, &saveptr);
+      if (!r1k_tok || !rgain_tok || !dac_vref_tok) continue;
+
+      cmd.param.Cal.R_1k = atof(r1k_tok);
+      cmd.param.Cal.R_gain = atof(rgain_tok);
+      cmd.param.Cal.dac_vref = atof(dac_vref_tok);
+    }
+    else if (strcmp(mode_tok, "ODR") == 0){
+
+      cmd.mode = Mode::ODR;
+
+      char* odr_tok = strtok_r(nullptr, delimiter, &saveptr);
+      if (!odr_tok) continue;
+
+      cmd.param.odr_setting = atof(odr_tok);
     }
     else if (strcmp(mode_tok,"STEADY") == 0){
 
@@ -91,9 +112,13 @@ void user_cmd_task(void* arg){
     }
     else if (strcmp(mode_tok,"SWEEP") == 0){
 
+      char* range_tok = strtok_r(nullptr, delimiter, &saveptr);
+      char* step_tok = strtok_r(nullptr, delimiter, &saveptr);
+      if (!range_tok || !step_tok) continue;
+
       cmd.mode = Mode::SWEEP;  
-      cmd.param.Sweep.range_in_V = atof(strtok_r(nullptr, delimiter, &saveptr));
-      cmd.param.Sweep.step_size = atof(strtok_r(nullptr, delimiter, &saveptr));
+      cmd.param.Sweep.range_in_V = atof(range_tok);
+      cmd.param.Sweep.step_size = atof(step_tok);
     }
 
     xQueueSend(user_cmd_queue, &cmd, 0);
@@ -104,6 +129,7 @@ void user_cmd_task(void* arg){
 void log_task (void* arg){
 
   DataLog received_data;
+
   while(true){
     if(xQueueReceive(data_queue, &received_data, 1) == pdTRUE){
       printf("data, %d, %d, %.3f, %.5f, %lu \n", 
